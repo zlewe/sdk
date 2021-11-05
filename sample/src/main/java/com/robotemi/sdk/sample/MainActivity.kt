@@ -25,7 +25,11 @@ import android.widget.*
 import android.widget.AdapterView.OnItemClickListener
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.robotemi.sdk.*
 import com.robotemi.sdk.Robot.*
 import com.robotemi.sdk.Robot.Companion.getInstance
@@ -83,11 +87,26 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     private var tts: TextToSpeech? = null
 
+//    private val permission =
+//        registerForActivityResult(
+//            ActivityResultContracts.RequestPermission()
+//        ){ isGranted: Boolean ->
+//        if (isGranted) {
+//            Log.d("GOGO", "取得")
+//        } else {
+//            Log.d("GOGO", "未取得")
+//        }
+//    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN)
         verifyStoragePermissions(this)
+        verifyCameraPermissions(this)
+        //取得相機權限
+        //permission.launch(Manifest.permission.CAMERA)
+
         robot = getInstance()
         initOnClickListener()
         tvLog.movementMethod = ScrollingMovementMethod.getInstance()
@@ -107,6 +126,12 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
             tts = TextToSpeech(this, this)
             robot.setTtsService(this)
         }
+
+    }
+
+    private fun startCamera() {
+        val cam = Intent(this, CameraActivity::class.java)
+        startActivity(cam)
     }
 
     /**
@@ -137,6 +162,23 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         robot.addOnReposeStatusChangedListener(this)
         robot.addOnMovementVelocityChangedListener(this)
         robot.showTopBar()
+
+//        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+//        cameraProviderFuture.addListener(Runnable {
+//            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+//
+//            //創建預覽
+//            val preview = Preview.Builder()
+//                .build()
+//                .also { it.setSurfaceProvider(previewView.surfaceProvider) }
+//
+//            //鏡頭方向
+//            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+//            cameraProvider.unbindAll()
+//
+//            //綁定預覽View並設置鏡頭
+//            cameraProvider.bindToLifecycle(this, cameraSelector, preview)
+//        }, ContextCompat.getMainExecutor(this))
     }
 
     /**
@@ -267,7 +309,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         btnGetNickName.setOnClickListener { getNickName() }
         btnSetMode.setOnClickListener { setMode() }
         btnGetMode.setOnClickListener { getMode() }
-        btnToggleKioskMode.setOnClickListener { toggleKiosk() }
+//        btnToggleKioskMode.setOnClickListener { toggleKiosk() }
+        btnToggleKioskMode.setOnClickListener { startCamera() }
         btnIsKioskModeOn.setOnClickListener { isKioskModeOn() }
         btnEnabledLatinKeyboards.setOnClickListener { enabledLatinKeyboards() }
         btnGetSupportedKeyboard.setOnClickListener { getSupportedLatinKeyboards() }
@@ -545,11 +588,14 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
      */
     private fun tiltAngle() {
         val speed = try {
-            etDistance.text.toString().toFloat()
+            etDistance.text.toString().toInt()
         } catch (e: Exception) {
-            1f
+            1
         }
-        robot.tiltAngle(23, speed)
+        val duration = Toast.LENGTH_SHORT
+        val toast = Toast.makeText(applicationContext, etDistance.text.toString(), duration)
+        toast.show()
+        robot.tiltAngle(speed, 0.5f)
     }
 
     /**
@@ -1116,6 +1162,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     override fun onCurrentPositionChanged(position: Position) {
         printLog("onCurrentPosition", position.toString())
+        printLog("onCurrentPosition", position.x.toString()+","+position.y.toString()+","+position.yaw.toString())
     }
 
     override fun onSequencePlayStatusChanged(status: Int) {
@@ -1549,6 +1596,22 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                     activity,
                     PERMISSIONS_STORAGE,
                     REQUEST_EXTERNAL_STORAGE
+                )
+            }
+        }
+
+        fun verifyCameraPermissions(activity: Activity?) {
+            // Check if we have write permission
+            val permission = ActivityCompat.checkSelfPermission(
+                activity!!,
+                Manifest.permission.CAMERA
+            )
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                // We don't have permission so prompt the user
+                ActivityCompat.requestPermissions(
+                    activity,
+                    arrayOf(Manifest.permission.CAMERA),
+                    1
                 )
             }
         }

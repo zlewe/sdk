@@ -71,7 +71,7 @@ class Robot private constructor(private val context: Context) {
 
     private var mediaButtonListener: MediaButtonListener? = null
 
-    private var sdkService: ISdkService? = null
+    public var sdkService: ISdkService? = null
 
     private val listenersMap = HashMap<String, NotificationListener>()
 

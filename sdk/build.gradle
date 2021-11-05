@@ -11,22 +11,17 @@ android {
         minSdkVersion 22
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 23
-        versionCode 1
-        versionName VERSION_NAME
         buildConfigField 'String', 'SDK_SERVICE_CLASS_NAME', '\"com.roboteam.teamy.sdk.SdkService\"'
     }
     buildTypes {
         debug {
-            debuggable true
             minifyEnabled true
             shrinkResources false
-            useProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         release {
             minifyEnabled true
             shrinkResources false
-            useProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

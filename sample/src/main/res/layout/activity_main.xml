@@ -76,7 +76,7 @@
                 android:ems="10"
                 android:gravity="center_horizontal"
                 android:hint="Please enter the distance"
-                android:inputType="numberDecimal"
+                android:inputType="numberDecimal | numberSigned"
                 android:maxLines="1"
                 android:textColor="@color/colorWhite"
                 android:textColorHint="@color/colorGrey" />
@@ -523,7 +523,8 @@
             android:id="@+id/tvLog"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@id/visualizerView"
+            android:layout_below="@id/previewView"
+            android:layout_alignBottom="@id/btnClearLog"
             android:layout_marginBottom="50dp"
             android:lineSpacingExtra="5dp"
             android:padding="20dp"
@@ -540,5 +541,14 @@
             android:layout_marginBottom="0dp"
             android:text="Clear"
             android:textSize="18sp" />
+
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="match_parent"
+            android:layout_height="350dp"
+            android:layout_below="@id/visualizerView"
+            android:visibility="visible" />
+
     </RelativeLayout>
 </LinearLayout>
