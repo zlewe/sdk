@@ -7,8 +7,6 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Environment
 import android.os.RemoteException
@@ -23,13 +21,21 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import android.widget.AdapterView.OnItemClickListener
+import android.content.Context
+import android.graphics.*
+import android.os.AsyncTask
+import android.util.Size
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
 import com.robotemi.sdk.*
 import com.robotemi.sdk.Robot.*
 import com.robotemi.sdk.Robot.Companion.getInstance
@@ -59,9 +65,13 @@ import com.robotemi.sdk.sequence.OnSequencePlayStatusChangedListener
 import com.robotemi.sdk.sequence.SequenceModel
 import com.robotemi.sdk.voice.ITtsService
 import kotlinx.android.synthetic.main.activity_main.*
+import org.eclipse.paho.android.service.MqttAndroidClient
+import org.eclipse.paho.client.mqttv3.*
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.net.DatagramPacket
 import java.util.*
 import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
@@ -87,6 +97,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     private var tts: TextToSpeech? = null
 
+    private lateinit var mqttClient : MQTTClient
+    private var mqttEn = false
 //    private val permission =
 //        registerForActivityResult(
 //            ActivityResultContracts.RequestPermission()
@@ -129,11 +141,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     }
 
-    private fun startCamera() {
-        val cam = Intent(this, CameraActivity::class.java)
-        startActivity(cam)
-    }
-
     /**
      * Setting up all the event listeners
      */
@@ -163,22 +170,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         robot.addOnMovementVelocityChangedListener(this)
         robot.showTopBar()
 
-//        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-//        cameraProviderFuture.addListener(Runnable {
-//            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-//
-//            //創建預覽
-//            val preview = Preview.Builder()
-//                .build()
-//                .also { it.setSurfaceProvider(previewView.surfaceProvider) }
-//
-//            //鏡頭方向
-//            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-//            cameraProvider.unbindAll()
-//
-//            //綁定預覽View並設置鏡頭
-//            cameraProvider.bindToLifecycle(this, cameraSelector, preview)
-//        }, ContextCompat.getMainExecutor(this))
     }
 
     /**
@@ -214,6 +205,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     }
 
     override fun onDestroy() {
+        mqttClient.disconnect()
         robot.removeOnRequestPermissionResultListener(this)
         robot.removeOnTelepresenceEventChangedListener(this)
         robot.removeOnFaceRecognizedListener(this)
@@ -309,12 +301,183 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         btnGetNickName.setOnClickListener { getNickName() }
         btnSetMode.setOnClickListener { setMode() }
         btnGetMode.setOnClickListener { getMode() }
-//        btnToggleKioskMode.setOnClickListener { toggleKiosk() }
-        btnToggleKioskMode.setOnClickListener { startCamera() }
+        btnToggleKioskMode.setOnClickListener { toggleKiosk() }
+        btnToggleKioskMode.setOnClickListener { subscribeCMD() }
         btnIsKioskModeOn.setOnClickListener { isKioskModeOn() }
         btnEnabledLatinKeyboards.setOnClickListener { enabledLatinKeyboards() }
         btnGetSupportedKeyboard.setOnClickListener { getSupportedLatinKeyboards() }
+        btnEnableCamera.setOnClickListener { startCamera() }
+        btnMQTTStart.setOnClickListener { startMQTT() }
     }
+
+    /**
+     * MQTT PART START
+     */
+    private fun startMQTT(){
+        val serverURI   = MQTT_SERVER_URI
+        val clientId    = MQTT_CLIENT_ID
+        val username    = MQTT_USERNAME
+        val pwd         = MQTT_PWD
+
+        mqttClient = MQTTClient(applicationContext, serverURI, clientId)
+        mqttEn = true
+        // Connect and login to MQTT Broker
+        mqttClient.connect( username,
+            pwd,
+            object : IMqttActionListener {
+                override fun onSuccess(asyncActionToken: IMqttToken?) {
+                    Log.d(this.javaClass.name, "Connection success")
+
+                    Toast.makeText(applicationContext, "MQTT Connection success", Toast.LENGTH_SHORT).show()
+                }
+
+                override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+                    Log.d(this.javaClass.name, "Connection failure: ${exception.toString()}")
+
+                    Toast.makeText(applicationContext, "MQTT Connection fails: ${exception.toString()}", Toast.LENGTH_SHORT).show()
+
+                }
+            },
+            object : MqttCallback {
+                override fun messageArrived(topic: String?, message: MqttMessage?) {
+                    val msg = "Receive message: ${message.toString()} from topic: $topic"
+                    Log.d(this.javaClass.name, msg)
+
+                    //Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT).show()
+
+                    val messageArr = message.toString().split(',').toTypedArray()
+                    if (messageArr[0] == "skidJoy"){
+                        val x = messageArr[1].toFloat()
+                        val y = messageArr[2].toFloat()
+
+                        skidJoy(x, y)
+                    }
+
+                }
+
+                override fun connectionLost(cause: Throwable?) {
+                    Log.d(this.javaClass.name, "Connection lost ${cause.toString()}")
+                }
+
+                override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                    Log.d(this.javaClass.name, "Delivery complete")
+                }
+            })
+//        var subscribed = false
+//        while (!subscribed) {
+//            subscribed = subscribeCMD()
+//        }
+    }
+
+    private fun subscribeCMD(): Boolean{
+        if (mqttEn) {
+            if (mqttClient.isConnected()) {
+                mqttClient.subscribe("cmd",
+                    1,
+                    object : IMqttActionListener {
+                        override fun onSuccess(asyncActionToken: IMqttToken?) {
+                            val msg = "Subscribed to: cmd"
+                            Log.d(this.javaClass.name, msg)
+
+                            Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT).show()
+                        }
+
+                        override fun onFailure(
+                            asyncActionToken: IMqttToken?,
+                            exception: Throwable?
+                        ) {
+                            Log.d(this.javaClass.name, "Failed to subscribe: cmd")
+                        }
+                    })
+            } else {
+                Log.d(this.javaClass.name, "Impossible to subscribe, no server connected")
+                return false
+            }
+        }
+        return true
+    }
+
+    private fun publishMessage(topic: String, message: ByteArray){
+        if (mqttEn) {
+            if (mqttClient.isConnected()) {
+                mqttClient.publish(topic,
+                    message,
+                    1,
+                    false,
+                    object : IMqttActionListener {
+                        override fun onSuccess(asyncActionToken: IMqttToken?) {
+                            val msg ="Publish message: $message to topic: $topic"
+                            Log.d(this.javaClass.name, msg)
+
+                            //Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT).show()
+                        }
+
+                        override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+                            Log.d(this.javaClass.name, "Failed to publish message to topic")
+                        }
+                    })
+            }
+        }
+    }
+    /**
+     * MQTT PART END
+     */
+    //內部subclass，專門在其他執行續處理socket的傳輸，這樣就不會盯著螢幕矇逼幾小時ㄌ
+    private fun startCamera() {
+        //val cam = Intent(this, CameraActivity::class.java)
+        //startActivity(cam)
+        //setContentView(R.layout.activity_main)
+        val cameraFuture = ProcessCameraProvider.getInstance(this)
+        cameraFuture.addListener(
+            Runnable {
+                try {
+                    val cameraProvider: ProcessCameraProvider = cameraFuture.get()
+                    bindImageAnalysis(cameraProvider)
+                } catch (e: java.lang.Exception) {
+                    e.printStackTrace()
+                }
+            }, ContextCompat.getMainExecutor(this)
+        )
+    }
+
+    private fun bindImageAnalysis(provider: ProcessCameraProvider) {
+        val preview = findViewById<PreviewView>(R.id.previewView)
+        val ana = ImageAnalysis.Builder().setTargetResolution(Size(640, 480))
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
+        ana.setAnalyzer(ContextCompat.getMainExecutor(this),
+            ImageAnalysis.Analyzer { image ->
+                val planes = image.planes
+                val yBuf = planes[0].buffer
+                val vuBuf = planes[2].buffer
+                val ySize = yBuf.remaining()
+                val vuSize = vuBuf.remaining()
+                val nv21 = ByteArray(ySize + vuSize)
+                yBuf[nv21, 0, ySize]
+                vuBuf[nv21, ySize, vuSize]
+                val img = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
+                val out = ByteArrayOutputStream()
+                img.compressToJpeg(Rect(0, 0, img.width, img.height), 50, out)
+                val mybytearray = out.toByteArray()
+                val byteObjects = arrayOfNulls<Byte>(mybytearray.size)
+
+                //把byte[]包裝成Byte[]，因為SocketThread繼承的AsyncTask不給用byte[]QQ
+                var i = 0
+                for (b in mybytearray) byteObjects[i++] = b // Autoboxing.
+
+                //啟動新的執行續，丟入圖片位元陣列~
+                //SocketThread().execute(*byteObjects)
+                publishMessage("image",mybytearray)
+                image.close()
+            })
+        val prev = Preview.Builder().build()
+        val selector = CameraSelector.Builder()
+            .requireLensFacing(CameraSelector.LENS_FACING_FRONT).build()
+        prev.setSurfaceProvider(preview.surfaceProvider);
+        provider.bindToLifecycle((this as LifecycleOwner)!!, selector, ana, prev)
+    }
+    /**
+     * Camera Part END
+     */
 
     private fun getSupportedLatinKeyboards() {
         val supportedLatinKeyboards = robot.getSupportedLatinKeyboards()
@@ -579,6 +742,14 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         printLog("speedX: $speedX, speedY: $speedY")
         while (System.currentTimeMillis() < end) {
             robot.skidJoy(speedX, speedY)
+        }
+    }
+    private fun skidJoy(x: Float, y: Float) {
+        val t = System.currentTimeMillis()
+        val end = t + 10
+        printLog("speedX: $x, speedY: $y")
+        while (System.currentTimeMillis() < end) {
+            robot.skidJoy(x, y)
         }
     }
 
@@ -1162,7 +1333,10 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     override fun onCurrentPositionChanged(position: Position) {
         printLog("onCurrentPosition", position.toString())
-        printLog("onCurrentPosition", position.x.toString()+","+position.y.toString()+","+position.yaw.toString())
+        printLog("onCurrentPosition", position.x.toString()+","+position.y.toString()+","+position.yaw.toString()+","+position.tiltAngle.toString())
+        var msg = position.x.toString()+","+position.y.toString()+","+position.yaw.toString()+","+position.tiltAngle.toString()
+        publishMessage("position", msg.toByteArray());
+
     }
 
     override fun onSequencePlayStatusChanged(status: Int) {

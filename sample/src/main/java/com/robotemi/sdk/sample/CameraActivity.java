@@ -33,6 +33,14 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
+import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
 public class CameraActivity extends AppCompatActivity {
     private PreviewView preview;
     private ListenableFuture<ProcessCameraProvider> cameraFuture;
@@ -40,6 +48,9 @@ public class CameraActivity extends AppCompatActivity {
     private InetAddress serverAddr;
     private SocketAddress sc_add;
     private DatagramSocket socket;
+    private MqttAndroidClient mqttAndroidClient;
+    private String PUB_TOPIC = "camera_image";
+    private String TAG = "MQTTClient";
 
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     //內部subclass，專門在其他執行續處理socket的傳輸，這樣就不會盯著螢幕矇逼幾小時ㄌ
@@ -54,11 +65,18 @@ public class CameraActivity extends AppCompatActivity {
                         bytes[j++] = b.byteValue();
 
                     DatagramPacket packet = new DatagramPacket(bytes, bytearray[0].length, serverAddr, 1111);
-                    socket.send(packet);                             // 傳送
+                    //socket.send(packet);                             // 傳送
+                    publishMessage(bytes);
+                    Log.i(TAG, "pub");
                     //socket.close();                                 // 關閉 UDP socket.
 
                 } catch (Exception e) {
                     Log.e("Socket", "Client: Error", e);
+                    try {
+                        wait(50);
+                    } catch (InterruptedException interruptedException) {
+                        interruptedException.printStackTrace();
+                    }
                 } finally {
                     //socket.close();
                 }
@@ -98,6 +116,72 @@ public class CameraActivity extends AppCompatActivity {
             socket = new DatagramSocket();
         }
         catch (Exception e){Log.e("YO,", "You just fucked up, bro.");}
+
+        /* 创建MqttAndroidClient对象，并设置回调接口。 */
+        mqttAndroidClient = new MqttAndroidClient(getApplicationContext(), "192.168.50.64", "temi");
+        mqttAndroidClient.setCallback(new MqttCallback() {
+            @Override
+            public void connectionLost(Throwable cause) {
+                Log.i(TAG, "connection lost");
+            }
+
+            @Override
+            public void messageArrived(String topic, MqttMessage message) throws Exception {
+                Log.i(TAG, "topic: " + topic + ", msg: " + new String(message.getPayload()));
+            }
+
+            @Override
+            public void deliveryComplete(IMqttDeliveryToken token) {
+                Log.i(TAG, "msg delivered");
+            }
+        });
+
+        /* 建立MQTT连接。 */
+        try {
+            mqttAndroidClient.connect();
+//            mqttAndroidClient.connect(mqttConnectOptions, null, new IMqttActionListener() {
+//                @Override
+//                public void onSuccess(IMqttToken asyncActionToken) {
+//                    Log.i(TAG, "connect succeed");
+//
+//                    subscribeTopic(SUB_TOPIC);
+//                }
+//
+//                @Override
+//                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+//                    Log.i(TAG, "connect failed");
+//                }
+//            });
+
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void publishMessage(byte[] payload) {
+        try {
+            if (mqttAndroidClient.isConnected() == false) {
+                mqttAndroidClient.connect();
+            }
+
+            MqttMessage message = new MqttMessage();
+            message.setPayload(payload);
+            message.setQos(0);
+            mqttAndroidClient.publish(PUB_TOPIC, message,null, new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+                    Log.i(TAG, "publish succeed!");
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                    Log.i(TAG, "publish failed!");
+                }
+            });
+        } catch (MqttException e) {
+            Log.e(TAG, e.toString());
+            e.printStackTrace();
+        }
     }
 
     private void bindImageAnalysis(@NonNull ProcessCameraProvider provider){
@@ -139,7 +223,7 @@ public class CameraActivity extends AppCompatActivity {
         Preview prev = new Preview.Builder().build();
         CameraSelector selector = new CameraSelector.Builder()
                 .requireLensFacing(CameraSelector.LENS_FACING_FRONT).build();
-        prev.setSurfaceProvider(preview.getSurfaceProvider());
+        //prev.setSurfaceProvider(preview.getSurfaceProvider());
 
         provider.bindToLifecycle((LifecycleOwner) this, selector, ana, prev);
     }

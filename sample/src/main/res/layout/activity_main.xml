@@ -157,6 +157,16 @@
             android:orientation="vertical">
 
             <Button
+                android:id="@+id/btnMQTTStart"
+                style="@style/ButtonCommon"
+                android:text="Start MQTT" />
+
+            <Button
+                android:id="@+id/btnEnableCamera"
+                style="@style/ButtonCommon"
+                android:text="Enable Camera" />
+
+            <Button
                 android:id="@+id/btnGetSupportedKeyboard"
                 style="@style/ButtonCommon"
                 android:text="Get Supported Latin Keyboards" />
