@@ -36,6 +36,7 @@ import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import com.google.gson.Gson
 import com.robotemi.sdk.*
 import com.robotemi.sdk.Robot.*
 import com.robotemi.sdk.Robot.Companion.getInstance
@@ -49,6 +50,7 @@ import com.robotemi.sdk.face.ContactModel
 import com.robotemi.sdk.face.OnContinuousFaceRecognizedListener
 import com.robotemi.sdk.face.OnFaceRecognizedListener
 import com.robotemi.sdk.listeners.*
+import com.robotemi.sdk.map.MapDataModel
 import com.robotemi.sdk.map.MapModel
 import com.robotemi.sdk.map.OnLoadMapStatusChangedListener
 import com.robotemi.sdk.model.CallEventModel
@@ -73,6 +75,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.net.DatagramPacket
 import java.util.*
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
 
@@ -99,6 +102,11 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     private lateinit var mqttClient : MQTTClient
     private var mqttEn = false
+
+    @Volatile
+    private var mapDataModel: MapDataModel? = null
+
+    private val singleThreadExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 //    private val permission =
 //        registerForActivityResult(
 //            ActivityResultContracts.RequestPermission()
@@ -302,12 +310,13 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         btnSetMode.setOnClickListener { setMode() }
         btnGetMode.setOnClickListener { getMode() }
         btnToggleKioskMode.setOnClickListener { toggleKiosk() }
-        btnToggleKioskMode.setOnClickListener { subscribeCMD() }
-        btnIsKioskModeOn.setOnClickListener { isKioskModeOn() }
+//        btnIsKioskModeOn.setOnClickListener { isKioskModeOn() }
+        btnIsKioskModeOn.setOnClickListener { sendMap() }
         btnEnabledLatinKeyboards.setOnClickListener { enabledLatinKeyboards() }
         btnGetSupportedKeyboard.setOnClickListener { getSupportedLatinKeyboards() }
         btnEnableCamera.setOnClickListener { startCamera() }
         btnMQTTStart.setOnClickListener { startMQTT() }
+        btnMQTTSub.setOnClickListener { subscribeCMD() }
     }
 
     /**
@@ -421,6 +430,24 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     }
     /**
      * MQTT PART END
+     */
+
+    private fun sendMap(){
+        singleThreadExecutor.execute {
+            mapDataModel = Robot.getInstance().getMapData() ?: return@execute
+            val mapImage = mapDataModel!!.mapImage
+            // Log.i("Map-mapImage", mapDataModel!!.mapImage.typeId)
+
+            val jsonString = Gson().toJson(mapImage)
+            // Log.i("Map-mapImage", jsonString)
+
+            val sendData = jsonString.toByteArray(Charsets.UTF_8);
+            publishMessage("map",sendData)
+        }
+    }
+
+    /**
+     * Camera Part START
      */
     //內部subclass，專門在其他執行續處理socket的傳輸，這樣就不會盯著螢幕矇逼幾小時ㄌ
     private fun startCamera() {
@@ -746,7 +773,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     }
     private fun skidJoy(x: Float, y: Float) {
         val t = System.currentTimeMillis()
-        val end = t + 10
+        val end = t + 8
         printLog("speedX: $x, speedY: $y")
         while (System.currentTimeMillis() < end) {
             robot.skidJoy(x, y)

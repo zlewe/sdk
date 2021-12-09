@@ -162,6 +162,11 @@
                 android:text="Start MQTT" />
 
             <Button
+                android:id="@+id/btnMQTTSub"
+                style="@style/ButtonCommon"
+                android:text="MQTT Subscribe" />
+
+            <Button
                 android:id="@+id/btnEnableCamera"
                 style="@style/ButtonCommon"
                 android:text="Enable Camera" />
