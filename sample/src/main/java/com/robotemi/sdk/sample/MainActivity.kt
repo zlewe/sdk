@@ -50,6 +50,7 @@ import com.robotemi.sdk.face.ContactModel
 import com.robotemi.sdk.face.OnContinuousFaceRecognizedListener
 import com.robotemi.sdk.face.OnFaceRecognizedListener
 import com.robotemi.sdk.listeners.*
+import com.robotemi.sdk.map.Layer
 import com.robotemi.sdk.map.MapDataModel
 import com.robotemi.sdk.map.MapModel
 import com.robotemi.sdk.map.OnLoadMapStatusChangedListener
@@ -323,7 +324,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
      * MQTT PART START
      */
     private fun startMQTT(){
-        val serverURI   = MQTT_SERVER_URI
+        val serverURI = "tcp://"+etSaveLocation.text.toString()+":1883"
+        //val serverURI   = MQTT_SERVER_URI
         val clientId    = MQTT_CLIENT_ID
         val username    = MQTT_USERNAME
         val pwd         = MQTT_PWD
@@ -360,6 +362,12 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                         val y = messageArr[2].toFloat()
 
                         skidJoy(x, y)
+                    }
+                    if (messageArr[0] == "goToPosition"){
+                        val x = messageArr[1].toFloat()
+                        val y = messageArr[2].toFloat()
+                        val yaw = messageArr[3].toFloat()
+                        goToPosition(x, y, yaw)
                     }
 
                 }
@@ -434,11 +442,14 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     private fun sendMap(){
         singleThreadExecutor.execute {
-            mapDataModel = Robot.getInstance().getMapData() ?: return@execute
+            val mapDataModel = Robot.getInstance().getMapData() ?: return@execute
             val mapImage = mapDataModel!!.mapImage
             // Log.i("Map-mapImage", mapDataModel!!.mapImage.typeId)
+            val mapInfo = mapDataModel!!.mapInfo
+            val mapId = mapDataModel!!.mapId
+            var mapdata = MapDataModel(mapImage, mapId, mapInfo)
 
-            val jsonString = Gson().toJson(mapImage)
+            val jsonString = Gson().toJson(mapdata)
             // Log.i("Map-mapImage", jsonString)
 
             val sendData = jsonString.toByteArray(Charsets.UTF_8);
@@ -1567,6 +1578,15 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
             val x = etX.text.toString().toFloat()
             val y = etY.text.toString().toFloat()
             val yaw = etYaw.text.toString().toFloat()
+            robot.goToPosition(Position(x, y, yaw, 0))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            printLog(e.message ?: "")
+        }
+    }
+
+    private fun goToPosition(x: Float, y: Float, yaw: Float) {
+        try {
             robot.goToPosition(Position(x, y, yaw, 0))
         } catch (e: Exception) {
             e.printStackTrace()
