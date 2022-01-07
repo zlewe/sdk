@@ -369,6 +369,14 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                         val yaw = messageArr[3].toFloat()
                         goToPosition(x, y, yaw)
                     }
+                    if (messageArr[0] == "tiltAngle"){
+                        val x = messageArr[1].toInt()
+                        robot.tiltAngle(x)
+                    }
+                    if (messageArr[0] == "loadMap"){
+                        sendMap()
+                    }
+
 
                 }
 
