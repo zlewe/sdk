@@ -330,7 +330,10 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         val username    = MQTT_USERNAME
         val pwd         = MQTT_PWD
 
-        mqttClient = MQTTClient(applicationContext, serverURI, clientId)
+        if (etSaveLocation.text.isEmpty())
+            mqttClient = MQTTClient(applicationContext, "tcp://192.168.50.197:1883", clientId)
+        else
+            mqttClient = MQTTClient(applicationContext, serverURI, clientId)
         mqttEn = true
         // Connect and login to MQTT Broker
         mqttClient.connect( username,
@@ -470,15 +473,13 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
      */
     //內部subclass，專門在其他執行續處理socket的傳輸，這樣就不會盯著螢幕矇逼幾小時ㄌ
     private fun startCamera() {
-        //val cam = Intent(this, CameraActivity::class.java)
-        //startActivity(cam)
-        //setContentView(R.layout.activity_main)
         val cameraFuture = ProcessCameraProvider.getInstance(this)
         cameraFuture.addListener(
             Runnable {
                 try {
                     val cameraProvider: ProcessCameraProvider = cameraFuture.get()
                     bindImageAnalysis(cameraProvider)
+
                 } catch (e: java.lang.Exception) {
                     e.printStackTrace()
                 }
@@ -488,30 +489,25 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     private fun bindImageAnalysis(provider: ProcessCameraProvider) {
         val preview = findViewById<PreviewView>(R.id.previewView)
-        val ana = ImageAnalysis.Builder().setTargetResolution(Size(640, 480))
+        val ana = ImageAnalysis.Builder().setTargetResolution(Size(1920, 1080))
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
         ana.setAnalyzer(ContextCompat.getMainExecutor(this),
             ImageAnalysis.Analyzer { image ->
+
                 val planes = image.planes
                 val yBuf = planes[0].buffer
                 val vuBuf = planes[2].buffer
                 val ySize = yBuf.remaining()
                 val vuSize = vuBuf.remaining()
                 val nv21 = ByteArray(ySize + vuSize)
-                yBuf[nv21, 0, ySize]
-                vuBuf[nv21, ySize, vuSize]
+                yBuf.get(nv21, 0, ySize)
+                vuBuf.get(nv21, ySize, vuSize)
                 val img = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
                 val out = ByteArrayOutputStream()
-                img.compressToJpeg(Rect(0, 0, img.width, img.height), 50, out)
+                img.compressToJpeg(Rect(0, 0, img.width, img.height), 75, out)
                 val mybytearray = out.toByteArray()
-                val byteObjects = arrayOfNulls<Byte>(mybytearray.size)
-
-                //把byte[]包裝成Byte[]，因為SocketThread繼承的AsyncTask不給用byte[]QQ
-                var i = 0
-                for (b in mybytearray) byteObjects[i++] = b // Autoboxing.
 
                 //啟動新的執行續，丟入圖片位元陣列~
-                //SocketThread().execute(*byteObjects)
                 publishMessage("image",mybytearray)
                 image.close()
             })
