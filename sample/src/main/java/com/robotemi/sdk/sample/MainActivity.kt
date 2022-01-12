@@ -23,6 +23,7 @@ import android.widget.*
 import android.widget.AdapterView.OnItemClickListener
 import android.content.Context
 import android.graphics.*
+import android.media.MediaPlayer
 import android.os.AsyncTask
 import android.util.Size
 import androidx.annotation.CheckResult
@@ -79,6 +80,7 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
+import kotlin.concurrent.schedule
 
 class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     ConversationViewAttachesListener, WakeupWordListener, ActivityStreamPublishListener,
@@ -103,6 +105,10 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     private lateinit var mqttClient : MQTTClient
     private var mqttEn = false
+
+    var filename = ""
+    private var imageResource = 0
+
 
     @Volatile
     private var mapDataModel: MapDataModel? = null
@@ -147,6 +153,9 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
             tts = TextToSpeech(this, this)
             robot.setTtsService(this)
         }
+        startMQTT()
+        startCamera()
+
 
     }
 
@@ -178,7 +187,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         robot.addOnReposeStatusChangedListener(this)
         robot.addOnMovementVelocityChangedListener(this)
         robot.showTopBar()
-
     }
 
     /**
@@ -239,86 +247,134 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     }
 
     private fun initOnClickListener() {
-        btnSpeak.setOnClickListener { speak() }
-        btnSaveLocation.setOnClickListener { saveLocation() }
-        btnGoTo.setOnClickListener { goTo() }
-        btnStopMovement.setOnClickListener { stopMovement() }
-        btnFollow.setOnClickListener { followMe() }
-        btnskidJoy.setOnClickListener { skidJoy() }
-        btnTiltAngle.setOnClickListener { tiltAngle() }
-        btnTiltBy.setOnClickListener { tiltBy() }
-        btnTurnBy.setOnClickListener { turnBy() }
-        btnBatteryInfo.setOnClickListener { getBatteryData() }
-        btnSavedLocations.setOnClickListener { savedLocationsDialog() }
-        btnCallOwner.setOnClickListener { callOwner() }
-        btnPublish.setOnClickListener { publishToActivityStream() }
-        btnHideTopBar.setOnClickListener { hideTopBar() }
-        btnShowTopBar.setOnClickListener { showTopBar() }
-        btnDisableWakeup.setOnClickListener { disableWakeup() }
-        btnEnableWakeup.setOnClickListener { enableWakeup() }
-        btnToggleNavBillboard.setOnClickListener { toggleNavBillboard() }
-        btnTogglePrivacyModeOn.setOnClickListener { privacyModeOn() }
-        btnTogglePrivacyModeOff.setOnClickListener { privacyModeOff() }
-        btnGetPrivacyMode.setOnClickListener { getPrivacyModeState() }
-        btnEnableHardButtons.setOnClickListener { enableHardButtons() }
-        btnDisableHardButtons.setOnClickListener { disableHardButtons() }
-        btnIsHardButtonsDisabled.setOnClickListener { isHardButtonsEnabled() }
-        btnGetOSVersion.setOnClickListener { getOSVersion() }
-        btnCheckFace.setOnClickListener { requestFace() }
-        btnCheckMap.setOnClickListener { requestMap() }
-        btnCheckSettings.setOnClickListener { requestSettings() }
-        btnCheckSequence.setOnClickListener { requestSequence() }
-        btnCheckAllPermission.setOnClickListener { requestAll() }
-        btnStartFaceRecognition.setOnClickListener { startFaceRecognition() }
-        btnStopFaceRecognition.setOnClickListener { stopFaceRecognition() }
-        btnSetGoToSpeed.setOnClickListener { setGoToSpeed() }
-        btnSetGoToSafety.setOnClickListener { setGoToSafety() }
-        btnToggleTopBadge.setOnClickListener { toggleTopBadge() }
-        btnToggleDetectionMode.setOnClickListener { toggleDetectionMode() }
-        btnToggleAutoReturn.setOnClickListener { toggleAutoReturn() }
-        btnTrackUser.setOnClickListener { toggleTrackUser() }
-        btnGetVolume.setOnClickListener { getVolume() }
-        btnSetVolume.setOnClickListener { setVolume() }
-        btnRequestToBeKioskApp.setOnClickListener { requestToBeKioskApp() }
-        btnStartDetectionModeWithDistance.setOnClickListener { startDetectionWithDistance() }
-        btnFetchSequence.setOnClickListener { getAllSequences() }
-        btnPlayFirstSequence.setOnClickListener { playFirstSequence() }
-        btnPlayFirstSequenceWithoutPlayer.setOnClickListener { playFirstSequenceWithoutPlayer() }
-        btnFetchMap.setOnClickListener { getMap() }
-        btnClearLog.setOnClickListener { clearLog() }
-        btnNlu.setOnClickListener { startNlu() }
-        btnGetAllContacts.setOnClickListener { getAllContacts() }
-        btnGoToPosition.setOnClickListener { goToPosition() }
-        btnStartTelepresenceToCenter.setOnClickListener { startTelepresenceToCenter() }
-        btnStartPage.setOnClickListener { startPage() }
-        btnRestart.setOnClickListener { restartTemi() }
-        btnGetMembersStatus.setOnClickListener { getMembersStatus() }
-        btnRepose.setOnClickListener { repose() }
-        btnGetMapList.setOnClickListener { getMapListBtn() }
-        btnLoadMap.setOnClickListener { loadMap() }
-        btnLock.setOnClickListener { lock() }
-        btnUnlock.setOnClickListener { unlock() }
-        btnMuteAlexa.setOnClickListener { muteAlexa() }
-        btnShutdown.setOnClickListener { shutdown() }
-        btnLoadMapWithPosition.setOnClickListener { loadMapWithPosition() }
-        btnLoadMapWithReposePosition.setOnClickListener { loadMapWithReposePosition() }
-        btnLoadMapWithRepose.setOnClickListener { loadMapWithRepose() }
-        btnSetSoundMode.setOnClickListener { setSoundMode() }
-        btnSetHardBtnMainMode.setOnClickListener { setHardBtnMainMode() }
-        btnToggleHardBtnPower.setOnClickListener { toggleHardBtnPower() }
-        btnToggleHardBtnVolume.setOnClickListener { toggleHardBtnVolume() }
-        btnGetNickName.setOnClickListener { getNickName() }
-        btnSetMode.setOnClickListener { setMode() }
-        btnGetMode.setOnClickListener { getMode() }
-        btnToggleKioskMode.setOnClickListener { toggleKiosk() }
-//        btnIsKioskModeOn.setOnClickListener { isKioskModeOn() }
-        btnIsKioskModeOn.setOnClickListener { sendMap() }
-        btnEnabledLatinKeyboards.setOnClickListener { enabledLatinKeyboards() }
-        btnGetSupportedKeyboard.setOnClickListener { getSupportedLatinKeyboards() }
-        btnEnableCamera.setOnClickListener { startCamera() }
-        btnMQTTStart.setOnClickListener { startMQTT() }
-        btnMQTTSub.setOnClickListener { subscribeCMD() }
+//        btnSpeak.setOnClickListener { speak() }
+//        btnSaveLocation.setOnClickListener { saveLocation() }
+//        btnGoTo.setOnClickListener { goTo() }
+//        btnStopMovement.setOnClickListener { stopMovement() }
+//        btnFollow.setOnClickListener { followMe() }
+//        btnskidJoy.setOnClickListener { skidJoy() }
+//        btnTiltAngle.setOnClickListener { tiltAngle() }
+//        btnTiltBy.setOnClickListener { tiltBy() }
+//        btnTurnBy.setOnClickListener { turnBy() }
+//        btnBatteryInfo.setOnClickListener { getBatteryData() }
+//        btnSavedLocations.setOnClickListener { savedLocationsDialog() }
+//        btnCallOwner.setOnClickListener { callOwner() }
+//        btnPublish.setOnClickListener { publishToActivityStream() }
+//        btnHideTopBar.setOnClickListener { hideTopBar() }
+//        btnShowTopBar.setOnClickListener { showTopBar() }
+//        btnDisableWakeup.setOnClickListener { disableWakeup() }
+//        btnEnableWakeup.setOnClickListener { enableWakeup() }
+//        btnToggleNavBillboard.setOnClickListener { toggleNavBillboard() }
+//        btnTogglePrivacyModeOn.setOnClickListener { privacyModeOn() }
+//        btnTogglePrivacyModeOff.setOnClickListener { privacyModeOff() }
+//        btnGetPrivacyMode.setOnClickListener { getPrivacyModeState() }
+//        btnEnableHardButtons.setOnClickListener { enableHardButtons() }
+//        btnDisableHardButtons.setOnClickListener { disableHardButtons() }
+//        btnIsHardButtonsDisabled.setOnClickListener { isHardButtonsEnabled() }
+//        btnGetOSVersion.setOnClickListener { getOSVersion() }
+//        btnCheckFace.setOnClickListener { requestFace() }
+//        btnCheckMap.setOnClickListener { requestMap() }
+//        btnCheckSettings.setOnClickListener { requestSettings() }
+//        btnCheckSequence.setOnClickListener { requestSequence() }
+//        btnCheckAllPermission.setOnClickListener { requestAll() }
+//        btnStartFaceRecognition.setOnClickListener { startFaceRecognition() }
+//        btnStopFaceRecognition.setOnClickListener { stopFaceRecognition() }
+//        btnSetGoToSpeed.setOnClickListener { setGoToSpeed() }
+//        btnSetGoToSafety.setOnClickListener { setGoToSafety() }
+//        btnToggleTopBadge.setOnClickListener { toggleTopBadge() }
+//        btnToggleDetectionMode.setOnClickListener { toggleDetectionMode() }
+//        btnToggleAutoReturn.setOnClickListener { toggleAutoReturn() }
+//        btnTrackUser.setOnClickListener { toggleTrackUser() }
+//        btnGetVolume.setOnClickListener { getVolume() }
+//        btnSetVolume.setOnClickListener { setVolume() }
+//        btnRequestToBeKioskApp.setOnClickListener { requestToBeKioskApp() }
+//        btnStartDetectionModeWithDistance.setOnClickListener { startDetectionWithDistance() }
+//        btnFetchSequence.setOnClickListener { getAllSequences() }
+//        btnPlayFirstSequence.setOnClickListener { playFirstSequence() }
+//        btnPlayFirstSequenceWithoutPlayer.setOnClickListener { playFirstSequenceWithoutPlayer() }
+//        btnFetchMap.setOnClickListener { getMap() }
+//        btnClearLog.setOnClickListener { clearLog() }
+//        btnNlu.setOnClickListener { startNlu() }
+//        btnGetAllContacts.setOnClickListener { getAllContacts() }
+//        btnGoToPosition.setOnClickListener { goToPosition() }
+//        btnStartTelepresenceToCenter.setOnClickListener { startTelepresenceToCenter() }
+//        btnStartPage.setOnClickListener { startPage() }
+//        btnRestart.setOnClickListener { restartTemi() }
+//        btnGetMembersStatus.setOnClickListener { getMembersStatus() }
+//        btnRepose.setOnClickListener { repose() }
+//        btnGetMapList.setOnClickListener { getMapListBtn() }
+//        btnLoadMap.setOnClickListener { loadMap() }
+//        btnLock.setOnClickListener { lock() }
+//        btnUnlock.setOnClickListener { unlock() }
+//        btnMuteAlexa.setOnClickListener { muteAlexa() }
+//        btnShutdown.setOnClickListener { shutdown() }
+//        btnLoadMapWithPosition.setOnClickListener { loadMapWithPosition() }
+//        btnLoadMapWithReposePosition.setOnClickListener { loadMapWithReposePosition() }
+//        btnLoadMapWithRepose.setOnClickListener { loadMapWithRepose() }
+//        btnSetSoundMode.setOnClickListener { setSoundMode() }
+//        btnSetHardBtnMainMode.setOnClickListener { setHardBtnMainMode() }
+//        btnToggleHardBtnPower.setOnClickListener { toggleHardBtnPower() }
+//        btnToggleHardBtnVolume.setOnClickListener { toggleHardBtnVolume() }
+//        btnGetNickName.setOnClickListener { getNickName() }
+//        btnSetMode.setOnClickListener { setMode() }
+//        btnGetMode.setOnClickListener { getMode() }
+//        btnToggleKioskMode.setOnClickListener { toggleKiosk() }
+////        btnIsKioskModeOn.setOnClickListener { isKioskModeOn() }
+//        btnIsKioskModeOn.setOnClickListener { sendMap() }
+//        btnEnabledLatinKeyboards.setOnClickListener { enabledLatinKeyboards() }
+//        btnGetSupportedKeyboard.setOnClickListener { getSupportedLatinKeyboards() }
+//        btnEnableCamera.setOnClickListener { startCamera() }
+//        btnMQTTStart.setOnClickListener { startMQTT() }
+//        btnMQTTSub.setOnClickListener { subscribeCMD() }
+        startgame2.setOnClickListener{ startplaygame()}
+
     }
+
+    //game
+    //music
+    fun music(filename: Int){
+        singleThreadExecutor.execute{
+            var mediaPlayer = MediaPlayer.create(this, filename)
+            mediaPlayer.start()
+            if(filename==R.raw.countdown1){
+                Thread.sleep(2300)
+            }
+            else if(filename == R.raw.countdown2 || filename == R.raw.countdown3){
+                Thread.sleep(1500)
+            }
+            else if(filename == R.raw.startsong){
+                Thread.sleep(22000)
+            }
+            else if(filename == R.raw.gamesong){
+                Thread.sleep(5000)
+            }
+        }
+    }
+
+
+
+    fun picture(filename: String){
+        var uri = "@drawable/" + filename  //圖片路徑和名稱
+        var imageResource = resources.getIdentifier(uri, null, packageName)
+        imageView2.setImageResource(imageResource);
+    }
+
+
+    private fun startplaygame(){
+
+        val b = findViewById<View>(R.id.startgame2)
+        b.visibility = View.GONE
+
+        picture("cover")
+        music(R.raw.startsong)
+
+        var s = "start game"
+        publishMessage("game",s.toByteArray())
+
+    }
+
+
+
 
     /**
      * MQTT PART START
@@ -343,6 +399,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                     Log.d(this.javaClass.name, "Connection success")
 
                     Toast.makeText(applicationContext, "MQTT Connection success", Toast.LENGTH_SHORT).show()
+                    subscribeCMD()
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
@@ -380,6 +437,26 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                         sendMap()
                     }
 
+                    //game start
+                    if (messageArr[0] == "countdown"){
+                        if(messageArr[1] == "3"){
+                            picture("num3")
+                            music(R.raw.countdown3)
+                        }
+                        else if(messageArr[1] == "2"){
+                            picture("num2")
+                            music(R.raw.countdown2)
+                        }
+                        else if(messageArr[1] == "1"){
+                            picture("num1")
+                            music(R.raw.countdown1)
+                        }
+
+                    }
+                    if (messageArr[0] == "turn"){
+                        picture("cover")
+                        music(R.raw.gamesong)
+                    }
 
                 }
 
