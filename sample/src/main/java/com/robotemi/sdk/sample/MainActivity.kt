@@ -7,6 +7,7 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.os.Bundle
 import android.os.Environment
 import android.os.RemoteException
@@ -21,16 +22,13 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import android.widget.AdapterView.OnItemClickListener
-import android.content.Context
 import android.graphics.*
 import android.media.MediaPlayer
-import android.os.AsyncTask
 import android.util.Size
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -51,7 +49,6 @@ import com.robotemi.sdk.face.ContactModel
 import com.robotemi.sdk.face.OnContinuousFaceRecognizedListener
 import com.robotemi.sdk.face.OnFaceRecognizedListener
 import com.robotemi.sdk.listeners.*
-import com.robotemi.sdk.map.Layer
 import com.robotemi.sdk.map.MapDataModel
 import com.robotemi.sdk.map.MapModel
 import com.robotemi.sdk.map.OnLoadMapStatusChangedListener
@@ -69,18 +66,23 @@ import com.robotemi.sdk.sequence.OnSequencePlayStatusChangedListener
 import com.robotemi.sdk.sequence.SequenceModel
 import com.robotemi.sdk.voice.ITtsService
 import kotlinx.android.synthetic.main.activity_main.*
-import org.eclipse.paho.android.service.MqttAndroidClient
+import kotlinx.android.synthetic.main.activity_main.view.*
 import org.eclipse.paho.client.mqttv3.*
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.net.DatagramPacket
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
-import kotlin.concurrent.schedule
+import android.graphics.BitmapFactory
+
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+
+
+
 
 class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     ConversationViewAttachesListener, WakeupWordListener, ActivityStreamPublishListener,
@@ -332,44 +334,47 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     //game
     //music
-    fun music(filename: Int){
+    fun music(filename: Int, sleeptime: Long){
         singleThreadExecutor.execute{
             var mediaPlayer = MediaPlayer.create(this, filename)
             mediaPlayer.start()
-            if(filename==R.raw.countdown1){
-                Thread.sleep(2300)
-            }
-            else if(filename == R.raw.countdown2 || filename == R.raw.countdown3){
-                Thread.sleep(1500)
-            }
-            else if(filename == R.raw.startsong){
-                Thread.sleep(22000)
-            }
-            else if(filename == R.raw.gamesong){
-                Thread.sleep(5000)
-            }
+            Thread.sleep(sleeptime)
         }
     }
 
 
-
+    //picture
     fun picture(filename: String){
         var uri = "@drawable/" + filename  //圖片路徑和名稱
         var imageResource = resources.getIdentifier(uri, null, packageName)
         imageView2.setImageResource(imageResource);
     }
 
-
+    //startgame
     private fun startplaygame(){
 
         val b = findViewById<View>(R.id.startgame2)
         b.visibility = View.GONE
 
-        picture("cover")
-        music(R.raw.startsong)
+        var c = findViewById<View>(R.id.textView)
+        c.visibility = View.GONE
+
 
         var s = "start game"
         publishMessage("game",s.toByteArray())
+
+        picture("cover")
+        music(R.raw.startsong, 10000)
+
+//        var image =
+//        val bitmap = (image.getDrawable() as BitmapDrawable).getBitmap()
+//        val stream = ByteArrayOutputStream()
+//        bitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)
+//        val image = stream.toByteArray()
+
+
+
+
 
     }
 
@@ -411,55 +416,97 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
             },
             object : MqttCallback {
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
-                    val msg = "Receive message: ${message.toString()} from topic: $topic"
-                    Log.d(this.javaClass.name, msg)
+                    if (topic == "cmd"){
+                        val msg = "Receive message: ${message.toString()} from topic: $topic"
+                        Log.d(this.javaClass.name, msg)
 
-                    //Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT).show()
+                        //Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT).show()
 
-                    val messageArr = message.toString().split(',').toTypedArray()
-                    if (messageArr[0] == "skidJoy"){
-                        val x = messageArr[1].toFloat()
-                        val y = messageArr[2].toFloat()
+                        val messageArr = message.toString().split(',').toTypedArray()
+                        if (messageArr[0] == "skidJoy"){
+                            val x = messageArr[1].toFloat()
+                            val y = messageArr[2].toFloat()
 
-                        skidJoy(x, y)
-                    }
-                    if (messageArr[0] == "goToPosition"){
-                        val x = messageArr[1].toFloat()
-                        val y = messageArr[2].toFloat()
-                        val yaw = messageArr[3].toFloat()
-                        goToPosition(x, y, yaw)
-                    }
-                    if (messageArr[0] == "tiltAngle"){
-                        val x = messageArr[1].toInt()
-                        robot.tiltAngle(x)
-                    }
-                    if (messageArr[0] == "loadMap"){
-                        sendMap()
-                    }
-
-                    //game start
-                    if (messageArr[0] == "countdown"){
-                        if(messageArr[1] == "3"){
-                            picture("num3")
-                            music(R.raw.countdown3)
+                            skidJoy(x, y)
                         }
-                        else if(messageArr[1] == "2"){
-                            picture("num2")
-                            music(R.raw.countdown2)
+                        if (messageArr[0] == "goToPosition"){
+                            val x = messageArr[1].toFloat()
+                            val y = messageArr[2].toFloat()
+                            val yaw = messageArr[3].toFloat()
+                            goToPosition(x, y, yaw)
                         }
-                        else if(messageArr[1] == "1"){
-                            picture("num1")
-                            music(R.raw.countdown1)
+                        if (messageArr[0] == "tiltAngle"){
+                            val x = messageArr[1].toInt()
+                            robot.tiltAngle(x)
+                        }
+                        if (messageArr[0] == "loadMap"){
+                            sendMap()
                         }
 
-                    }
-                    if (messageArr[0] == "turn"){
-                        picture("cover")
-                        music(R.raw.gamesong)
-                    }
+                        //game start
+                        if (messageArr[0] == "countdown"){
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.GONE
+                            if(messageArr[1] == "3"){
+                                picture("num3")
+                                music(R.raw.countdown3, 1500)
+                            }
+                            else if(messageArr[1] == "2"){
+                                picture("num2")
+                                music(R.raw.countdown2, 1500)
+                            }
+                            else if(messageArr[1] == "1"){
+                                picture("num1")
+                                music(R.raw.countdown1, 2300)
+                            }
+
+                        }
+
+                        if (messageArr[0] == "imitate"){
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.GONE
+                            picture(messageArr[1])
+                            music(R.raw.num321, 2300)
+                        }
+
+                        if (messageArr[0] == "turnback"){
+                            turnBy(-180,1.0)
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.GONE
+                            picture("turnback")
+                            music(R.raw.turnback, 7000)
+                        }
+
+                        if (messageArr[0] == "turn"){
+                            turnBy(180,1.0)
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.GONE
+                            picture("turn")
+                            music(R.raw.gamesong, 5000)
+                        }
+
+                        if (messageArr[0] == "scan"){
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.GONE
+                            picture("detect2")
+                            music(R.raw.detect, 7000)
+                        }
+
+                        if (messageArr[0] == "out"){
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.VISIBLE
+                            c.text = messageArr[1] + " OUT !!!"
+                            picture("gun")
+                            music(R.raw.gun1, 2500)
+                        }
 
                 }
-
+                    else if (topic == "imagestream"){
+                        val bytearray = message!!.payload.toUByteArray().toByteArray()
+                        val bmp = BitmapFactory.decodeByteArray(bytearray, 0, bytearray.size)
+                        imageView2.setImageBitmap(bmp)
+                    }
+                }
                 override fun connectionLost(cause: Throwable?) {
                     Log.d(this.javaClass.name, "Connection lost ${cause.toString()}")
                 }
@@ -492,6 +539,23 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             exception: Throwable?
                         ) {
                             Log.d(this.javaClass.name, "Failed to subscribe: cmd")
+                        }
+                    })
+                mqttClient.subscribe("imagestream",
+                    1,
+                    object : IMqttActionListener {
+                        override fun onSuccess(asyncActionToken: IMqttToken?) {
+                            val msg = "Subscribed to: imagestream"
+                            Log.d(this.javaClass.name, msg)
+
+                            Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT).show()
+                        }
+
+                        override fun onFailure(
+                            asyncActionToken: IMqttToken?,
+                            exception: Throwable?
+                        ) {
+                            Log.d(this.javaClass.name, "Failed to subscribe: imagestream")
                         }
                     })
             } else {
@@ -899,6 +963,9 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
             1f
         }
         robot.turnBy(90, speed)
+    }
+    private fun turnBy(deg: Int, speed: Double) {
+        robot.turnBy(deg, speed.toFloat())
     }
 
     /**

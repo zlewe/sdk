@@ -8,6 +8,7 @@
     android:background="@color/colorBlack"
     android:orientation="horizontal"
     android:paddingTop="70dp"
+    android:scrollbarStyle="outsideOverlay"
     tools:context=".MainActivity">
 
     <LinearLayout
@@ -37,10 +38,21 @@
 
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="65dp"
+            android:gravity="center"
+            android:text="TextView"
+            android:textColor="#F80707"
+            android:textSize="55sp"
+            android:visibility="gone" />
+
         <ImageView
             android:id="@+id/imageView2"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:visibility="visible"
             app:srcCompat="@drawable/cover" />
 
     </LinearLayout>
