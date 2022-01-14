@@ -1137,10 +1137,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 //        if (description.isNotBlank()) {
 //            robot.speak(create(description, false))
 //        }
-        robot.speak(create(status, false))
-//        if (description.isNotBlank()) {
-//            robot.speak(create(description, false))
-//        }
         var msg = "goToStatus,$status,$descriptionId,$description"
         publishMessage("status",msg.toByteArray())
     }
@@ -1931,10 +1927,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
     override fun onMovementStatusChanged(type: String, status: String) {
         printLog("Movement response - $type status: $status")
-        robot.speak(create(status, false))
-//        if (description.isNotBlank()) {
-//            robot.speak(create(description, false))
-//        }
         var msg = "movementStatus,$type,$status"
         publishMessage("status",msg.toByteArray())
     }
