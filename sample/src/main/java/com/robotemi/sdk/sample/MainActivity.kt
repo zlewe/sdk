@@ -466,7 +466,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             var c = findViewById<TextView>(R.id.textView)
                             c.visibility = View.GONE
                             picture(messageArr[1])
-                            music(R.raw.num321, 2300)
+//                            music(R.raw.num321, 2300)
                         }
 
                         if (messageArr[0] == "turnback"){
@@ -474,7 +474,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             var c = findViewById<TextView>(R.id.textView)
                             c.visibility = View.GONE
                             picture("turnback")
-                            music(R.raw.turnback, 7000)
+//                            music(R.raw.turnback, 7000)
                         }
 
                         if (messageArr[0] == "turn"){
@@ -489,7 +489,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             var c = findViewById<TextView>(R.id.textView)
                             c.visibility = View.GONE
                             picture("detect2")
-                            music(R.raw.detect, 7000)
+//                            music(R.raw.detect, 7000)
                         }
 
                         if (messageArr[0] == "out"){
@@ -497,7 +497,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             c.visibility = View.VISIBLE
                             c.text = messageArr[1] + " OUT !!!"
                             picture("gun")
-                            music(R.raw.gun1, 2500)
+//                            music(R.raw.gun1, 2500)
                         }
 
                 }
