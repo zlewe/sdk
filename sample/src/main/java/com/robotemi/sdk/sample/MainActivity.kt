@@ -359,19 +359,20 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         var c = findViewById<View>(R.id.textView)
         c.visibility = View.GONE
 
-
         var s = "start game"
         publishMessage("game",s.toByteArray())
 
         picture("cover")
-        music(R.raw.startsong, 10000)
+        music(R.raw.startsong, 20000)
 
 //        var image =
 //        val bitmap = (image.getDrawable() as BitmapDrawable).getBitmap()
 //        val stream = ByteArrayOutputStream()
 //        bitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)
 //        val image = stream.toByteArray()
-
+//        val bytearray = .toByteArray()
+//        val bmp = BitmapFactory.decodeByteArray(bytearray, 0, bytearray.size)
+//        imageView2.setImageBitmap(bmp)
 
 
 
@@ -459,14 +460,13 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                                 picture("num1")
                                 music(R.raw.countdown1, 2300)
                             }
-
                         }
 
                         if (messageArr[0] == "imitate"){
                             var c = findViewById<TextView>(R.id.textView)
                             c.visibility = View.GONE
                             picture(messageArr[1])
-//                            music(R.raw.num321, 2300)
+                            music(R.raw.num54321, 5200)
                         }
 
                         if (messageArr[0] == "turnback"){
@@ -474,7 +474,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             var c = findViewById<TextView>(R.id.textView)
                             c.visibility = View.GONE
                             picture("turnback")
-//                            music(R.raw.turnback, 7000)
+                            music(R.raw.turnback, 6000)
                         }
 
                         if (messageArr[0] == "turn"){
@@ -489,18 +489,32 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             var c = findViewById<TextView>(R.id.textView)
                             c.visibility = View.GONE
                             picture("detect2")
-//                            music(R.raw.detect, 7000)
+                            music(R.raw.detect, 7000)
                         }
 
                         if (messageArr[0] == "out"){
                             var c = findViewById<TextView>(R.id.textView)
                             c.visibility = View.VISIBLE
                             c.text = messageArr[1] + " OUT !!!"
-                            picture("gun")
-//                            music(R.raw.gun1, 2500)
+                            var random = Random().nextInt()
+                            if(random % 2 == 0){
+                                picture("gun")
+                                music(R.raw.gun1, 2500)
+                            }
+                            else{
+                                picture("dog")
+                                music(R.raw.dog, 2500)
+                            }
                         }
 
-                }
+                        if (messageArr[0] == "end"){
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.VISIBLE
+                            c.text = messageArr[1] + " WIN !!!"
+                            picture("money")
+                            music(R.raw.end, 20000)
+                        }
+                    }
                     else if (topic == "imagestream"){
                         val bytearray = message!!.payload.toUByteArray().toByteArray()
                         val bmp = BitmapFactory.decodeByteArray(bytearray, 0, bytearray.size)
@@ -1200,6 +1214,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     </pre></pre> */
     override fun onAsrResult(asrResult: String) {
         printLog("onAsrResult", "asrResult = $asrResult")
+        var msg = "onAsrResult,$asrResult"
+        publishMessage("status",msg.toByteArray())
         try {
             val metadata = packageManager
                 .getApplicationInfo(packageName, PackageManager.GET_META_DATA).metaData ?: return
