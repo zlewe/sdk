@@ -19,22 +19,37 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:gravity="center"
             android:orientation="horizontal">
-
-            <androidx.camera.view.PreviewView
-                android:id="@+id/previewView"
-                android:layout_width="1px"
-                android:layout_height="1px"
-                android:visibility="visible">
-
-            </androidx.camera.view.PreviewView>
 
             <Button
                 android:id="@+id/startgame2"
                 style="@style/ButtonCommon"
-                android:layout_width="325dp"
+                android:layout_width="300dp"
+                android:shadowColor="#ED0923"
                 android:text="Start Game" />
+
+            <Button
+                android:id="@+id/Register"
+                style="@style/ButtonCommon"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Your English Name"
+                android:shadowColor="#00BCD4"
+                android:text="Register" />
+
+            <EditText
+                android:id="@+id/etYaw2"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:hint="Your English Name"
+                android:textColor="@color/colorWhite"
+                android:textColorHint="@color/colorGrey"
+                android:visibility="gone" />
 
         </LinearLayout>
 
@@ -47,6 +62,14 @@
             android:textColor="#F80707"
             android:textSize="55sp"
             android:visibility="gone" />
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="1px"
+            android:layout_height="1px"
+            android:visibility="visible">
+
+        </androidx.camera.view.PreviewView>
 
         <ImageView
             android:id="@+id/imageView2"

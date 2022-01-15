@@ -15,10 +15,6 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
-import android.view.Gravity
-import android.view.MotionEvent
-import android.view.View
-import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import android.widget.AdapterView.OnItemClickListener
@@ -80,6 +76,9 @@ import android.graphics.BitmapFactory
 
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.view.*
+import android.widget.LinearLayout
+
 
 
 
@@ -111,6 +110,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     var filename = ""
     private var imageResource = 0
 
+    //var clicktime = 0
 
     @Volatile
     private var mapDataModel: MapDataModel? = null
@@ -329,6 +329,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 //        btnMQTTStart.setOnClickListener { startMQTT() }
 //        btnMQTTSub.setOnClickListener { subscribeCMD() }
         startgame2.setOnClickListener{ startplaygame()}
+        Register.setOnClickListener{ Register()}
 
     }
 
@@ -353,11 +354,22 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     //startgame
     private fun startplaygame(){
 
-        val b = findViewById<View>(R.id.startgame2)
-        b.visibility = View.GONE
-
         var c = findViewById<View>(R.id.textView)
         c.visibility = View.GONE
+        var e = findViewById<View>(R.id.imageView2)
+        e.visibility = View.VISIBLE
+        var b = findViewById<Button>(R.id.startgame2)
+        b.visibility = View.GONE
+        var d = findViewById<Button>(R.id.Register)
+        d.visibility = View.GONE
+        var f = findViewById<EditText>(R.id.etYaw2)
+        f.visibility = View.GONE
+
+        val pv = findViewById<View>(R.id.previewView) as PreviewView
+        val width = 1
+        val height = 1
+        val parms = LinearLayout.LayoutParams(width, height)
+        pv.setLayoutParams(parms)
 
         var s = "start game"
         publishMessage("game",s.toByteArray())
@@ -365,20 +377,52 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         picture("cover")
         music(R.raw.startsong, 20000)
 
-//        var image =
-//        val bitmap = (image.getDrawable() as BitmapDrawable).getBitmap()
-//        val stream = ByteArrayOutputStream()
-//        bitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)
-//        val image = stream.toByteArray()
-//        val bytearray = .toByteArray()
-//        val bmp = BitmapFactory.decodeByteArray(bytearray, 0, bytearray.size)
-//        imageView2.setImageBitmap(bmp)
-
-
 
 
     }
 
+    //Register
+    private fun Register(){
+
+        var c = findViewById<View>(R.id.textView)
+        c.visibility = View.GONE
+        var d = findViewById<View>(R.id.imageView2)
+        d.visibility = View.GONE
+        var b = findViewById<Button>(R.id.Register)
+        b.setText("Next")
+
+        var e = findViewById<EditText>(R.id.etYaw2)
+        e.visibility = View.VISIBLE
+
+        var s = "Register, " + e.text.toString()
+        publishMessage("game",s.toByteArray())
+
+
+
+        val pv = findViewById<View>(R.id.previewView) as PreviewView
+        val width = 1920
+        val height = 1080
+        val parms = LinearLayout.LayoutParams(width, height)
+        pv.setLayoutParams(parms)
+
+        music(R.raw.register, 5200)
+    }
+
+    //Return initial screen
+    private fun ReturnInitialscreen(){
+
+        var c = findViewById<View>(R.id.textView)
+        c.visibility = View.GONE
+        var d = findViewById<View>(R.id.imageView2)
+        d.visibility = View.VISIBLE
+        var b = findViewById<Button>(R.id.Register)
+        b.visibility = View.VISIBLE
+        b.setText("Register")
+        var e = findViewById<Button>(R.id.startgame2)
+        e.visibility = View.VISIBLE
+
+        picture("circle")
+    }
 
 
 
@@ -513,6 +557,10 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             c.text = messageArr[1] + " WIN !!!"
                             picture("money")
                             music(R.raw.end, 20000)
+                        }
+
+                        if (messageArr[0] == "return_initial"){
+                            ReturnInitialscreen()
                         }
                     }
                     else if (topic == "imagestream"){
