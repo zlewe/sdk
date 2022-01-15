@@ -78,6 +78,34 @@
             android:visibility="visible"
             app:srcCompat="@drawable/circle" />
 
+        <LinearLayout
+            android:id="@+id/yesorno"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/yes"
+                style="@style/ButtonCommon"
+                android:layout_width="325dp"
+                android:layout_height="wrap_content"
+                android:shadowColor="#ED0923"
+                android:text="Yesssss"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/no"
+                style="@style/ButtonCommon"
+                android:layout_width="325dp"
+                android:layout_height="wrap_content"
+                android:shadowColor="#ED0923"
+                android:text="Nooooooo"
+                android:visibility="gone" />
+        </LinearLayout>
+
     </LinearLayout>
 
     <LinearLayout

@@ -330,6 +330,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 //        btnMQTTSub.setOnClickListener { subscribeCMD() }
         startgame2.setOnClickListener{ startplaygame()}
         Register.setOnClickListener{ Register()}
+        yes.setOnClickListener{ PlayAgain()}
+        no.setOnClickListener{ NotPlayAgain()}
 
     }
 
@@ -354,8 +356,9 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     //startgame
     private fun startplaygame(){
 
-        var c = findViewById<View>(R.id.textView)
-        c.visibility = View.GONE
+        var c = findViewById<TextView>(R.id.textView)
+        c.visibility = View.VISIBLE
+        c.setText("Face Training Time~~")
         var e = findViewById<View>(R.id.imageView2)
         e.visibility = View.VISIBLE
         var b = findViewById<Button>(R.id.startgame2)
@@ -375,7 +378,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         publishMessage("game",s.toByteArray())
 
         picture("cover")
-        music(R.raw.startsong, 20000)
+
 
 
 
@@ -420,6 +423,10 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         c.visibility = View.GONE
         var d = findViewById<View>(R.id.imageView2)
         d.visibility = View.VISIBLE
+        val width2 = 1920
+        val height2 = 1080
+        val parms2 = LinearLayout.LayoutParams(width2, height2)
+        d.setLayoutParams(parms2)
         var b = findViewById<Button>(R.id.Register)
         b.visibility = View.VISIBLE
         b.setText("Register")
@@ -427,6 +434,12 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         e.visibility = View.VISIBLE
         var f = findViewById<EditText>(R.id.etYaw2)
         f.visibility = View.VISIBLE
+        var g = findViewById<Button>(R.id.yes)
+        g.visibility = View.GONE
+        var h = findViewById<Button>(R.id.no)
+        h.visibility = View.GONE
+        var i = findViewById<LinearLayout>(R.id.yesorno)
+        i.visibility = View.GONE
 
         val pv = findViewById<View>(R.id.previewView) as PreviewView
         val width = 1
@@ -435,6 +448,29 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         pv.setLayoutParams(parms)
 
         picture("circle")
+    }
+
+    fun PlayAgain(){
+        var s = "start game"
+        publishMessage("game",s.toByteArray())
+        var d = findViewById<ImageView>(R.id.imageView2) as ImageView
+        val width = 1920
+        val height = 1080
+        val parms = LinearLayout.LayoutParams(width, height)
+        d.setLayoutParams(parms)
+        var c = findViewById<View>(R.id.textView)
+        c.visibility = View.GONE
+        var g = findViewById<Button>(R.id.yes)
+        g.visibility = View.GONE
+        var h = findViewById<Button>(R.id.no)
+        h.visibility = View.GONE
+        var i = findViewById<LinearLayout>(R.id.yesorno)
+        i.visibility = View.GONE
+        picture("cover")
+    }
+
+    fun NotPlayAgain(){
+        ReturnInitialscreen()
     }
 
 
@@ -502,9 +538,25 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                         }
 
                         //game start
+
+                        if (messageArr[0] == "origin_position"){
+                            music(R.raw.startsong, 13000)
+                        }
+
                         if (messageArr[0] == "countdown"){
                             var c = findViewById<TextView>(R.id.textView)
                             c.visibility = View.GONE
+                            var g = findViewById<Button>(R.id.yes)
+                            g.visibility = View.GONE
+                            var h = findViewById<Button>(R.id.no)
+                            h.visibility = View.GONE
+                            var i = findViewById<LinearLayout>(R.id.yesorno)
+                            i.visibility = View.GONE
+                            var d = findViewById<ImageView>(R.id.imageView2) as ImageView
+                            val width = 1920
+                            val height = 1080
+                            val parms = LinearLayout.LayoutParams(width, height)
+                            d.setLayoutParams(parms)
                             if(messageArr[1] == "3"){
                                 picture("num3")
                                 music(R.raw.countdown3, 1500)
@@ -529,30 +581,36 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                         if (messageArr[0] == "imitate"){
                             var c = findViewById<TextView>(R.id.textView)
                             c.visibility = View.GONE
+                            var g = findViewById<Button>(R.id.yes)
+                            g.visibility = View.GONE
+                            var h = findViewById<Button>(R.id.no)
+                            h.visibility = View.GONE
+                            var i = findViewById<LinearLayout>(R.id.yesorno)
+                            i.visibility = View.GONE
+                            var d = findViewById<ImageView>(R.id.imageView2) as ImageView
+                            val width = 1920
+                            val height = 1080
+                            val parms = LinearLayout.LayoutParams(width, height)
+                            d.setLayoutParams(parms)
+
                             picture(messageArr[1])
                             music(R.raw.num54321, 5200)
                         }
 
                         if (messageArr[0] == "turnback"){
                             turnBy(-180,1.0)
-                            var c = findViewById<TextView>(R.id.textView)
-                            c.visibility = View.GONE
                             picture("turnback")
                             music(R.raw.turnback, 6000)
                         }
 
                         if (messageArr[0] == "turn"){
                             turnBy(180,1.0)
-                            var c = findViewById<TextView>(R.id.textView)
-                            c.visibility = View.GONE
                             picture("turn")
                             music(R.raw.gamesong, 5000)
                         }
 
                         if (messageArr[0] == "scan"){
-                            var c = findViewById<TextView>(R.id.textView)
-                            c.visibility = View.GONE
-                            picture("detect2")
+                            picture("detect")
                             music(R.raw.detect, 7000)
                         }
 
@@ -576,8 +634,27 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             c.visibility = View.VISIBLE
                             c.text = messageArr[1] + " WIN !!!"
                             picture("money")
-                            music(R.raw.end, 20000)
+                            music(R.raw.end, 5000)
                         }
+
+                        if (messageArr[0] == "play_again"){
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.GONE
+                            var i = findViewById<LinearLayout>(R.id.yesorno)
+                            i.visibility = View.VISIBLE
+                            var g = findViewById<Button>(R.id.yes)
+                            g.visibility = View.VISIBLE
+                            var h = findViewById<Button>(R.id.no)
+                            h.visibility = View.VISIBLE
+                            var d = findViewById<ImageView>(R.id.imageView2) as ImageView
+                            val width = 1920
+                            val height = 720
+                            val parms = LinearLayout.LayoutParams(width, height)
+                            d.setLayoutParams(parms)
+                            picture("play_again")
+                            music(R.raw.end, 5000)
+                        }
+
 
                         if (messageArr[0] == "return_initial"){
                             ReturnInitialscreen()
