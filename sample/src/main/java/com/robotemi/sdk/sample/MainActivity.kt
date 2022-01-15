@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     var filename = ""
     private var imageResource = 0
 
-    //var clicktime = 0
+    var name = "abc"
 
     @Volatile
     private var mapDataModel: MapDataModel? = null
@@ -384,19 +384,12 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     //Register
     private fun Register(){
 
-        var c = findViewById<View>(R.id.textView)
+        var c = findViewById<TextView>(R.id.textView)
         c.visibility = View.GONE
         var d = findViewById<View>(R.id.imageView2)
         d.visibility = View.GONE
-        var b = findViewById<Button>(R.id.Register)
-        b.setText("Next")
-
         var e = findViewById<EditText>(R.id.etYaw2)
         e.visibility = View.VISIBLE
-
-        var s = "Register, " + e.text.toString()
-        publishMessage("game",s.toByteArray())
-
 
 
         val pv = findViewById<View>(R.id.previewView) as PreviewView
@@ -404,6 +397,18 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         val height = 1080
         val parms = LinearLayout.LayoutParams(width, height)
         pv.setLayoutParams(parms)
+
+        if (e.text.toString() != "" && e.text.toString() != name){
+            var b = findViewById<Button>(R.id.Register)
+            b.visibility = View.GONE
+            var s = "Register," + e.text.toString()
+            name = e.text.toString()
+            publishMessage("game",s.toByteArray())
+        }
+        else{
+            c.visibility = View.VISIBLE
+            c.text = "PLEASE INPUT YOUR NAME"
+        }
 
         music(R.raw.register, 5200)
     }
@@ -420,6 +425,14 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         b.setText("Register")
         var e = findViewById<Button>(R.id.startgame2)
         e.visibility = View.VISIBLE
+        var f = findViewById<EditText>(R.id.etYaw2)
+        f.visibility = View.VISIBLE
+
+        val pv = findViewById<View>(R.id.previewView) as PreviewView
+        val width = 1
+        val height = 1
+        val parms = LinearLayout.LayoutParams(width, height)
+        pv.setLayoutParams(parms)
 
         picture("circle")
     }
@@ -504,6 +517,13 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                                 picture("num1")
                                 music(R.raw.countdown1, 2300)
                             }
+                        }
+                        if (messageArr[0] == "register_done"){
+                            var b = findViewById<Button>(R.id.Register)
+                            b.visibility = View.VISIBLE
+                            b.setText("Next")
+
+
                         }
 
                         if (messageArr[0] == "imitate"){
