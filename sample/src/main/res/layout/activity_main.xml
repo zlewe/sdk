@@ -49,7 +49,7 @@
                 android:hint="Your English Name"
                 android:textColor="@color/colorWhite"
                 android:textColorHint="@color/colorGrey"
-                android:visibility="visible" />
+                android:visibility="gone" />
 
         </LinearLayout>
 

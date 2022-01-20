@@ -111,6 +111,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     private var imageResource = 0
 
     var name = "abc"
+    var clicktime = 1
 
     @Volatile
     private var mapDataModel: MapDataModel? = null
@@ -378,10 +379,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         publishMessage("game",s.toByteArray())
 
         picture("cover")
-
-
-
-
     }
 
     //Register
@@ -393,6 +390,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         d.visibility = View.GONE
         var e = findViewById<EditText>(R.id.etYaw2)
         e.visibility = View.VISIBLE
+        var f = findViewById<EditText>(R.id.etYaw2)
+        f.visibility = View.VISIBLE
 
 
         val pv = findViewById<View>(R.id.previewView) as PreviewView
@@ -401,17 +400,24 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         val parms = LinearLayout.LayoutParams(width, height)
         pv.setLayoutParams(parms)
 
-        if (e.text.toString() != "" && e.text.toString() != name){
-            var b = findViewById<Button>(R.id.Register)
-            b.visibility = View.GONE
-            var s = "Register," + e.text.toString()
-            name = e.text.toString()
-            publishMessage("game",s.toByteArray())
+        if(clicktime == 1){
+            clicktime = 2
         }
+
         else{
-            c.visibility = View.VISIBLE
-            c.text = "PLEASE INPUT YOUR NAME"
+            if (e.text.toString() != "" && e.text.toString() != name){
+                var b = findViewById<Button>(R.id.Register)
+                b.visibility = View.GONE
+                var s = "Register," + e.text.toString()
+                name = e.text.toString()
+                publishMessage("game",s.toByteArray())
+            }
+            else{
+                c.visibility = View.VISIBLE
+                c.text = "PLEASE INPUT YOUR NAME"
+            }
         }
+
 
         music(R.raw.register, 5200)
     }
@@ -433,13 +439,15 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         var e = findViewById<Button>(R.id.startgame2)
         e.visibility = View.VISIBLE
         var f = findViewById<EditText>(R.id.etYaw2)
-        f.visibility = View.VISIBLE
+        f.visibility = View.GONE
         var g = findViewById<Button>(R.id.yes)
         g.visibility = View.GONE
         var h = findViewById<Button>(R.id.no)
         h.visibility = View.GONE
         var i = findViewById<LinearLayout>(R.id.yesorno)
         i.visibility = View.GONE
+
+        clicktime = 1
 
         val pv = findViewById<View>(R.id.previewView) as PreviewView
         val width = 1
@@ -574,8 +582,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             var b = findViewById<Button>(R.id.Register)
                             b.visibility = View.VISIBLE
                             b.setText("Next")
-
-
                         }
 
                         if (messageArr[0] == "imitate"){
@@ -610,8 +616,22 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                         }
 
                         if (messageArr[0] == "scan"){
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.GONE
                             picture("detect")
                             music(R.raw.detect, 7000)
+                        }
+
+                        if (messageArr[0] == "no_face"){
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.VISIBLE
+                            c.text = "Please be CLOSER !!!"
+                        }
+
+                        if (messageArr[0] == "yes_face"){
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.VISIBLE
+                            c.text = "I think this is " + messageArr[1]
                         }
 
                         if (messageArr[0] == "out"){
@@ -619,14 +639,26 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             c.visibility = View.VISIBLE
                             c.text = messageArr[1] + " OUT !!!"
                             var random = Random().nextInt()
-                            if(random % 2 == 0){
-                                picture("gun")
-                                music(R.raw.gun1, 2500)
+                            if(messageArr[1] == "Nobody"){
+                                picture("nobody")
                             }
                             else{
-                                picture("dog")
-                                music(R.raw.dog, 2500)
+                                if(random % 2 == 0){
+                                    picture("gun")
+                                    music(R.raw.gun1, 2500)
+                                }
+                                else{
+                                    picture("dog")
+                                    music(R.raw.dog, 2500)
+                                }
                             }
+                        }
+
+                        if (messageArr[0] == "scan_another"){
+                            var c = findViewById<TextView>(R.id.textView)
+                            c.visibility = View.GONE
+                            Thread.sleep(3000)
+                            picture("detect")
                         }
 
                         if (messageArr[0] == "end"){
