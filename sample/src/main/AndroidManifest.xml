@@ -46,7 +46,12 @@
         <!-- Set value to true to cover original voice flow[NLU]. -->
         <meta-data
             android:name="@string/metadata_override_nlu"
-            android:value="false" />
+            android:value="true" />
+
+
+        <meta-data
+            android:name="@string/metadata_kiosk"
+            android:value="true" />
 
         <!-- Set value to true to cover original voice flow[ASR]. -->
         <meta-data

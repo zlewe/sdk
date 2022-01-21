@@ -113,6 +113,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     var name = "abc"
     var clicktime = 1
 
+    var moving = false
+
     @Volatile
     private var mapDataModel: MapDataModel? = null
 
@@ -390,8 +392,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         d.visibility = View.GONE
         var e = findViewById<EditText>(R.id.etYaw2)
         e.visibility = View.VISIBLE
-        var f = findViewById<EditText>(R.id.etYaw2)
-        f.visibility = View.VISIBLE
 
 
         val pv = findViewById<View>(R.id.previewView) as PreviewView
@@ -421,6 +421,47 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
         music(R.raw.register, 5200)
     }
+
+    private fun TakePicture(){
+
+
+        var c = findViewById<TextView>(R.id.textView)
+        c.visibility = View.GONE
+        var d = findViewById<View>(R.id.imageView2)
+        d.visibility = View.GONE
+        var e = findViewById<EditText>(R.id.etYaw2)
+        e.visibility = View.GONE
+        var b = findViewById<Button>(R.id.Register)
+        b.visibility = View.GONE
+        var j = findViewById<Button>(R.id.startgame2)
+        j.visibility = View.GONE
+        var f = findViewById<EditText>(R.id.etYaw2)
+        f.visibility = View.GONE
+        var g = findViewById<Button>(R.id.yes)
+        g.visibility = View.GONE
+        var h = findViewById<Button>(R.id.no)
+        h.visibility = View.GONE
+        var i = findViewById<LinearLayout>(R.id.yesorno)
+        i.visibility = View.GONE
+
+
+        val pv = findViewById<View>(R.id.previewView) as PreviewView
+        val width = 1920
+        val height = 1080
+        val parms = LinearLayout.LayoutParams(width, height)
+        pv.setLayoutParams(parms)
+
+        music(R.raw.num54321, 5200)
+
+        singleThreadExecutor.execute{
+            Thread.sleep(5500)
+            var s = "take_one_picture"
+            publishMessage("game",s.toByteArray())
+        }
+
+
+    }
+
 
     //Return initial screen
     private fun ReturnInitialscreen(){
@@ -525,6 +566,10 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                         //Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT).show()
 
                         val messageArr = message.toString().split(',').toTypedArray()
+                        if (messageArr[0] == "already_to_take_one_picture"){
+                            TakePicture()
+                        }
+
                         if (messageArr[0] == "skidJoy"){
                             val x = messageArr[1].toFloat()
                             val y = messageArr[2].toFloat()
@@ -693,6 +738,19 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                         }
                     }
                     else if (topic == "imagestream"){
+                        val pv = findViewById<View>(R.id.previewView) as PreviewView
+                        val width = 1
+                        val height = 1
+                        val parms = LinearLayout.LayoutParams(width, height)
+                        pv.setLayoutParams(parms)
+
+                        var d = findViewById<View>(R.id.imageView2)
+                        d.visibility = View.VISIBLE
+                        val width2 = 1920
+                        val height2 = 1080
+                        val parms2 = LinearLayout.LayoutParams(width2, height2)
+                        d.setLayoutParams(parms2)
+
                         val bytearray = message!!.payload.toUByteArray().toByteArray()
                         val bmp = BitmapFactory.decodeByteArray(bytearray, 0, bytearray.size)
                         imageView2.setImageBitmap(bmp)
@@ -1268,7 +1326,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     private fun publishToActivityStream() {
         val activityStreamObject: ActivityStreamObject
         val fileName = "puppy.png"
-        val bm = BitmapFactory.decodeResource(resources, R.drawable.puppy)
+        //val bm = BitmapFactory.decodeResource(resources, R.drawable.puppy)
         val puppiesFile = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath,
             fileName
@@ -1276,7 +1334,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         val fileOutputStream: FileOutputStream
         try {
             fileOutputStream = FileOutputStream(puppiesFile)
-            bm.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+            //bm.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
             fileOutputStream.close()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -1330,6 +1388,9 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 //        }
         var msg = "goToStatus,$status,$descriptionId,$description"
         publishMessage("status",msg.toByteArray())
+        if(status == "complete" && moving){
+            moving = false
+        }
     }
 
     override fun onConversationAttaches(isAttached: Boolean) {
@@ -1390,7 +1451,9 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
      * @param asrResult The result of the ASR after waking up temi.
     </pre></pre> */
     override fun onAsrResult(asrResult: String) {
+
         printLog("onAsrResult", "asrResult = $asrResult")
+        //Toast.makeText(applicationContext, "asrResult = $asrResult", Toast.LENGTH_SHORT).show()
         var msg = "onAsrResult,$asrResult"
         publishMessage("status",msg.toByteArray())
         try {
@@ -1402,25 +1465,150 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
             e.printStackTrace()
             return
         }
+        if(asrResult.length==0) return
+
+        var command=asrResult
+        var nextCommand=""
+        if (asrResult.contains("然後")) {
+            var index = asrResult.indexOf("然後")
+            command = asrResult.substring(0,index)
+            nextCommand = asrResult.substring(index+2)
+        }
+
         when {
-            asrResult.equals("Hello", ignoreCase = true) -> {
+            command.equals("Hello", ignoreCase = true) -> {
                 robot.askQuestion("Hello, I'm temi, what can I do for you?")
             }
-            asrResult.equals("Play music", ignoreCase = true) -> {
+            command.equals("Take picture", ignoreCase = true) -> {
+                robot.tiltAngle(0)
+                robot.askQuestion("OK!")
+                robot.finishConversation()
+                TakePicture()
+            }
+            command.equals("Play music", ignoreCase = true) -> {
                 robot.finishConversation()
                 robot.speak(create("Okay, please enjoy.", false))
                 playMusic()
             }
-            asrResult.equals("Play movie", ignoreCase = true) -> {
+            command.equals("Play movie", ignoreCase = true) -> {
                 robot.finishConversation()
                 robot.speak(create("Okay, please enjoy.", false))
                 playMovie()
             }
-            asrResult.toLowerCase(Locale.getDefault()).contains("follow me") -> {
+            command.toLowerCase(Locale.getDefault()).contains("去") -> {
+                var targettext = ""
+                if(command.toLowerCase(Locale.getDefault()).contains("充電")){
+//                    robot.askQuestion("OK!")
+                    robot.finishConversation()
+//                    Log.e("print: ", robot.locations.toString())
+                    robot.goTo("home base")
+                }
+                if(command.toLowerCase(Locale.getDefault()).contains("幫我")){
+                    var textposition = command.indexOf("幫我")
+                    targettext = command.substring(textposition+2)
+
+                }
+                if(command.toLowerCase(Locale.getDefault()).contains("客廳")){
+//                    robot.askQuestion("OK!")
+                    robot.finishConversation()
+                    robot.goToPosition(Position((0.4).toFloat(), (-0.87).toFloat(), (0).toFloat()))
+                    moving = true
+                    singleThreadExecutor.execute{
+                        while(moving){
+                            Thread.sleep(100)
+                        }
+                        if(targettext.length > 0){
+                            robot.askQuestion("我想"+targettext)
+                            robot.finishConversation()
+                            Thread.sleep(3000)
+                        }
+                        onAsrResult(nextCommand)
+                    }
+                }
+
+                if(command.toLowerCase(Locale.getDefault()).contains("餐廳")){
+//                    robot.askQuestion("OK!")
+                    robot.finishConversation()
+                    robot.goToPosition(Position((0.53).toFloat(), (-5.89).toFloat(), (0).toFloat()))
+                    moving = true
+                    singleThreadExecutor.execute{
+                        while(moving){
+                            Thread.sleep(100)
+                        }
+                        if(targettext.length > 0){
+                            robot.askQuestion("我想"+targettext)
+                            robot.finishConversation()
+                            Thread.sleep(3000)
+                        }
+                        onAsrResult(nextCommand)
+                    }
+                }
+
+                if(command.toLowerCase(Locale.getDefault()).contains("工作室")){
+//                    robot.askQuestion("OK!")
+                    robot.finishConversation()
+                    robot.goToPosition(Position((5.64).toFloat(), (-2.29).toFloat(), (1).toFloat()))
+                    moving = true
+                    singleThreadExecutor.execute{
+                        while(moving){
+                            Thread.sleep(100)
+                        }
+                        if(targettext.length > 0){
+                            robot.askQuestion("我想"+targettext)
+                            robot.finishConversation()
+                            Thread.sleep(3000)
+                        }
+                        onAsrResult(nextCommand)
+                    }
+                }
+
+                else if(command.toLowerCase(Locale.getDefault()).contains("房間")){
+//                    robot.askQuestion("OK!")
+                    robot.finishConversation()
+                    robot.goToPosition(Position((6.3).toFloat(), (-4.0).toFloat(), (-1).toFloat()))
+                    moving = true
+                    singleThreadExecutor.execute{
+                        while(moving){
+                            Thread.sleep(100)
+                        }
+                        if(command.contains("起床")){
+                            music(R.raw.wake_up, 11900)
+                        }
+                        else if(targettext.length > 0){
+                            robot.askQuestion("我想"+targettext)
+                            robot.finishConversation()
+                            Thread.sleep(3000)
+                        }
+                        onAsrResult(nextCommand)
+
+                    }
+                }
+            }
+
+            command.toLowerCase(Locale.getDefault()).contains("狗叫") -> {
+                robot.finishConversation()
+                music(R.raw.dog, 3000)
+            }
+
+            command.toLowerCase(Locale.getDefault()).contains("拍照") -> {
+                robot.finishConversation()
+                robot.goToPosition(Position((0.094).toFloat(), (-3.21).toFloat(), (3.14159).toFloat()))
+                moving = true
+                singleThreadExecutor.execute{
+                    while(moving){
+                        Thread.sleep(100)
+                    }
+                    var s = "ready_to_take_one_picture"
+                    publishMessage("game",s.toByteArray())
+                }
+
+            }
+
+            command.toLowerCase(Locale.getDefault()).contains("follow me") -> {
                 robot.finishConversation()
                 robot.beWithMe()
             }
-            asrResult.toLowerCase(Locale.getDefault()).contains("go to home base") -> {
+            command.toLowerCase(Locale.getDefault()).contains("go to home base") -> {
                 robot.finishConversation()
                 robot.goTo("home base")
             }
