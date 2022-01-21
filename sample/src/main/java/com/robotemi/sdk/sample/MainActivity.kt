@@ -1495,6 +1495,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                 robot.speak(create("Okay, please enjoy.", false))
                 playMovie()
             }
+
+            command.toLowerCase(Locale.getDefault()).contains("回")||
             command.toLowerCase(Locale.getDefault()).contains("去") -> {
                 var targettext = ""
                 if(command.toLowerCase(Locale.getDefault()).contains("充電")){
@@ -1585,6 +1587,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                 }
             }
 
+            command.toLowerCase(Locale.getDefault()).contains("瘋狗")||
             command.toLowerCase(Locale.getDefault()).contains("狗叫") -> {
                 robot.finishConversation()
                 music(R.raw.dog, 3000)
@@ -1603,17 +1606,18 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                 }
 
             }
-
-            command.toLowerCase(Locale.getDefault()).contains("follow me") -> {
+            command.toLowerCase(Locale.getDefault()).contains("跟")&&
+            command.toLowerCase(Locale.getDefault()).contains("我")&&
+            command.toLowerCase(Locale.getDefault()).contains("走") -> {
                 robot.finishConversation()
                 robot.beWithMe()
-            }
-            command.toLowerCase(Locale.getDefault()).contains("go to home base") -> {
-                robot.finishConversation()
-                robot.goTo("home base")
+                if (command.contains("願意")) {
+                    robot.askQuestion("我願意跟你到天涯海角")
+                    robot.finishConversation()
+                }
             }
             else -> {
-                robot.askQuestion("Sorry I can't understand you, could you please ask something else?")
+                robot.askQuestion("蛤")
             }
         }
     }
