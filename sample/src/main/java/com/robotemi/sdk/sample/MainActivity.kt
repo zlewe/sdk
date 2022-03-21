@@ -7,9 +7,9 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Resources
 import android.os.Bundle
 import android.os.Environment
+import android.os.AsyncTask
 import android.os.RemoteException
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
@@ -76,12 +76,20 @@ import android.graphics.BitmapFactory
 
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.net.rtp.AudioCodec
+import android.net.rtp.AudioGroup
+import android.net.rtp.AudioStream
+import android.net.rtp.RtpStream
 import android.view.*
 import android.widget.LinearLayout
+import java.net.InetAddress
+import android.media.AudioManager
+import android.media.AudioManager.GET_DEVICES_INPUTS
+import androidx.activity.result.contract.ActivityResultContracts
 
-
-
-
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
 
 class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     ConversationViewAttachesListener, WakeupWordListener, ActivityStreamPublishListener,
@@ -101,34 +109,45 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     private lateinit var robot: Robot
 
     private val executorService = Executors.newSingleThreadExecutor()
+    //private val audioTask = AudioTask()
 
     private var tts: TextToSpeech? = null
 
-    private lateinit var mqttClient : MQTTClient
     private var mqttEn = false
+    private lateinit var mqttClient : MQTTClient
 
     var filename = ""
     private var imageResource = 0
 
     var name = "abc"
     var clicktime = 1
-
     var moving = false
 
     @Volatile
     private var mapDataModel: MapDataModel? = null
 
     private val singleThreadExecutor: ExecutorService = Executors.newSingleThreadExecutor()
-//    private val permission =
-//        registerForActivityResult(
-//            ActivityResultContracts.RequestPermission()
-//        ){ isGranted: Boolean ->
-//        if (isGranted) {
-//            Log.d("GOGO", "取得")
-//        } else {
-//            Log.d("GOGO", "未取得")
-//        }
-//    }
+
+    private fun startAudioStream(sampleRate:Int, channel:Int, format:Int, buffer_size:Int)
+    {
+        //initialize the audio streaming
+        val audio = getSystemService(AUDIO_SERVICE) as AudioManager
+        Log.e("Avaliable Devices Num:", audio.getDevices(GET_DEVICES_INPUTS).size.toString())
+        audio.mode = AudioManager.MODE_IN_COMMUNICATION
+
+        var buffer = ByteArray(buffer_size)
+        var recorder = AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, channel, format, buffer_size)
+
+        recorder.startRecording()
+        var audioThread = Thread(Runnable {
+            while(true){
+                buffer = ByteArray(buffer_size)
+                recorder.read(buffer, 0, buffer_size, AudioRecord.READ_BLOCKING)
+                publishMessage("audio", buffer)
+            }
+        })
+        audioThread.start()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -160,8 +179,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         }
         startMQTT()
         startCamera()
-
-
+        startAudioStream(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, 44100)
     }
 
     /**
@@ -335,7 +353,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         Register.setOnClickListener{ Register()}
         yes.setOnClickListener{ PlayAgain()}
         no.setOnClickListener{ NotPlayAgain()}
-
     }
 
     //game
@@ -347,7 +364,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
             Thread.sleep(sleeptime)
         }
     }
-
 
     //picture
     fun picture(filename: String){
@@ -418,7 +434,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
             }
         }
 
-
         music(R.raw.register, 5200)
     }
 
@@ -451,10 +466,18 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         val parms = LinearLayout.LayoutParams(width, height)
         pv.setLayoutParams(parms)
 
-        music(R.raw.num54321, 5200)
+        //music(R.raw.num54321, 5200)
 
         singleThreadExecutor.execute{
-            Thread.sleep(5500)
+            for (i in 5 downTo 1) {
+                //robot.askQuestion(i.toString())
+                //robot.finishConversation()
+                robot.speak(TtsRequest.create(i.toString(),false))
+                Thread.sleep(1500)
+            }
+            robot.speak(TtsRequest.create("誰氣死",false))
+            Thread.sleep(1500)
+            robot.speak(TtsRequest.create("喀嚓",false))
             var s = "take_one_picture"
             publishMessage("game",s.toByteArray())
         }
@@ -539,6 +562,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         else
             mqttClient = MQTTClient(applicationContext, serverURI, clientId)
         mqttEn = true
+
         // Connect and login to MQTT Broker
         mqttClient.connect( username,
             pwd,
@@ -556,6 +580,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                     Toast.makeText(applicationContext, "MQTT Connection fails: ${exception.toString()}", Toast.LENGTH_SHORT).show()
 
                 }
+
+
             },
             object : MqttCallback {
                 override fun messageArrived(topic: String?, message: MqttMessage?) {
@@ -1496,6 +1522,20 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                 playMovie()
             }
 
+            command.toLowerCase(Locale.getDefault()).contains("拍照") -> {
+                robot.finishConversation()
+                robot.goToPosition(Position((0.094).toFloat(), (-3.21).toFloat(), (3.14159).toFloat()))
+                moving = true
+                singleThreadExecutor.execute{
+                    while(moving){
+                        Thread.sleep(100)
+                    }
+                    var s = "ready_to_take_one_picture"
+                    publishMessage("game",s.toByteArray())
+                }
+
+            }
+
             command.toLowerCase(Locale.getDefault()).contains("回")||
             command.toLowerCase(Locale.getDefault()).contains("去") -> {
                 var targettext = ""
@@ -1593,19 +1633,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                 music(R.raw.dog, 3000)
             }
 
-            command.toLowerCase(Locale.getDefault()).contains("拍照") -> {
-                robot.finishConversation()
-                robot.goToPosition(Position((0.094).toFloat(), (-3.21).toFloat(), (3.14159).toFloat()))
-                moving = true
-                singleThreadExecutor.execute{
-                    while(moving){
-                        Thread.sleep(100)
-                    }
-                    var s = "ready_to_take_one_picture"
-                    publishMessage("game",s.toByteArray())
-                }
-
-            }
             command.toLowerCase(Locale.getDefault()).contains("跟")&&
             command.toLowerCase(Locale.getDefault()).contains("我")&&
             command.toLowerCase(Locale.getDefault()).contains("走") -> {
