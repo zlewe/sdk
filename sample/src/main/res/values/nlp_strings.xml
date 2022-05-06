@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<string name="nlp_server_address" translatable="false">"http://140.112.95.4:9100/"</string>
+
+<string name="mini_menu_nlp_med_qa">MedQA</string>
+<string name="mini_menu_nlp_mem_qa">MemoryQA</string>
+<string name="mini_menu_nlp_emo_sup">EmoSup</string>
+
+<string name="mem_storage">Memory Storage</string>
+<string name="mem_retrieval">Memory Retrieval</string>
+<string name="mem_reset">Memory Reset</string>
+
+<string name="select_nlp_func">Select the dialogue function you need.</string>
+<string name="select_mem_mode">Select the mode you need.</string>
+<string name="empty_nlp_func">no NLP function found</string>
+<string name="nlp_server_error">Server cannot be connected.</string>
+<string name="nlp_response_error">Some error happened parsing server data.</string>
+
+<string name="nlp_mode">%1$s mode</string>
+<string name="mem_mode">%1$s mode</string>
+<string name="title_template">%1$s - %2$s</string>
+<string name="execute_reset">execute</string>
+<string name="mem_reset_done">%1$s，switch to memory retrieval mode</string>
+
+<string name="source_found">Information has been retrieved.</string>
+<string name="source_not_found">Sorry, I cannot find relevant information.</string>
+<string name="source_from">from %1$s</string>
+<string name="option_none">Sorry, can you be more specific about which aspect you want to know?</string>
+<string name="hide_menu">Hide menu.</string>
+<string name="show_menu">Show menu.</string>
+
+<string name="med_init">Do you have any question about healthcare?</string>
+<string name="med_resume">Is there any question you want to ask me?</string>
+<string name="med_if_ad">Do you want to know about problems related to dementia?</string>
+<string name="med_about_ad"> Okay, what question do you want to ask? </string>
+<string name="med_example">What are the symptoms of flu?</string>
+
+<string name="mem_init">I can help you remember things.</string>
+<string name="mem_resume">Do you need me to help recall anything?</string>
+<string name="mem_example">I went to the theater with Xiao-Ming last night.</string>
+
+<string name="emo_init">Do you have any troubles recently?</string>
+<string name="emo_resume">If you feel anxious or upset, you can talk to me.</string>
+<string name="emo_example"> I failed the exam today.</string>
+</resources>

@@ -7,7 +7,6 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Resources
 import android.os.Bundle
 import android.os.Environment
 import android.os.RemoteException
@@ -74,13 +73,10 @@ import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
 import android.graphics.BitmapFactory
 
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.view.*
 import android.widget.LinearLayout
 
-
-
+import com.robotemi.sdk.sample.nlp.EmoSup
 
 
 class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
@@ -99,6 +95,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     TextToSpeech.OnInitListener, OnSdkExceptionListener {
 
     private lateinit var robot: Robot
+    private lateinit var emosup: EmoSup
 
     private val executorService = Executors.newSingleThreadExecutor()
 
@@ -140,6 +137,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         //permission.launch(Manifest.permission.CAMERA)
 
         robot = getInstance()
+        emosup = EmoSup(robot, applicationContext)
         initOnClickListener()
         tvLog.movementMethod = ScrollingMovementMethod.getInstance()
         robot.addOnRequestPermissionResultListener(this)
@@ -521,8 +519,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
     fun NotPlayAgain(){
         ReturnInitialscreen()
     }
-
-
 
     /**
      * MQTT PART START
@@ -1444,6 +1440,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         printLog("onDetectionStateChanged: state = $state")
     }
 
+
+
     /**
      * If you want to cover the voice flow in Launcher OS,
      * please add following meta-data to AndroidManifest.xml.
@@ -1491,9 +1489,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
             command = asrResult.substring(0,index)
             nextCommand = asrResult.substring(index+1)
         }
-
-        Log.e("command: ", command)
-        Log.e("next: ", nextCommand)
 
         when {
             command.equals("Hello", ignoreCase = true) -> {
@@ -1636,7 +1631,8 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                 }
             }
             else -> {
-                robot.askQuestion("蛤")
+                //robot.askQuestion("蛤")
+                emosup.nextSentence(asrResult)
             }
         }
     }
