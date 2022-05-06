@@ -535,7 +535,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
         val pwd         = MQTT_PWD
 
         if (etSaveLocation.text.isEmpty())
-            mqttClient = MQTTClient(applicationContext, "tcp://192.168.50.197:1883", clientId)
+            mqttClient = MQTTClient(applicationContext, MQTT_SERVER_URI, clientId)
         else
             mqttClient = MQTTClient(applicationContext, serverURI, clientId)
         mqttEn = true
@@ -623,6 +623,7 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                                 music(R.raw.countdown1, 2300)
                             }
                         }
+
                         if (messageArr[0] == "register_done"){
                             var b = findViewById<Button>(R.id.Register)
                             b.visibility = View.VISIBLE
@@ -677,6 +678,11 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             var c = findViewById<TextView>(R.id.textView)
                             c.visibility = View.VISIBLE
                             c.text = "I think this is " + messageArr[1]
+                        }
+
+                        if (messageArr[0] == "fall"){
+                            music(R.raw.alarm, 5000)
+                            picture("warning")
                         }
 
                         if (messageArr[0] == "out"){
@@ -1469,11 +1475,25 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
 
         var command=asrResult
         var nextCommand=""
+
         if (asrResult.contains("然後")) {
             var index = asrResult.indexOf("然後")
             command = asrResult.substring(0,index)
             nextCommand = asrResult.substring(index+2)
         }
+        else if (asrResult.contains("在去")) {
+            var index = asrResult.indexOf("在去")
+            command = asrResult.substring(0,index)
+            nextCommand = asrResult.substring(index+2)
+        }
+        else if (asrResult.contains("再")) {
+            var index = asrResult.indexOf("再")
+            command = asrResult.substring(0,index)
+            nextCommand = asrResult.substring(index+1)
+        }
+
+        Log.e("command: ", command)
+        Log.e("next: ", nextCommand)
 
         when {
             command.equals("Hello", ignoreCase = true) -> {
@@ -1582,7 +1602,6 @@ class MainActivity : AppCompatActivity(), NlpListener, OnRobotReadyListener,
                             Thread.sleep(3000)
                         }
                         onAsrResult(nextCommand)
-
                     }
                 }
             }
